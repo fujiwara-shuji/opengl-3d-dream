@@ -24,6 +24,8 @@ private:
     std::vector<Vector3> pixels;
     std::vector<Triangle> triangles;
     std::vector<Line> lines;  // Coordinate axes and other lines
+    std::vector<Vector3> vertices;  // Vertices to render as points
+    std::vector<Line> edges;  // Model edges to render as lines
 
     // Camera parameters
     Vector3 cameraPos = Vector3(0, 0, 5);
@@ -53,6 +55,14 @@ public:
     void addLine(const Line& line);
     void clearLines();
     void setLines(const std::vector<Line>& lineList);
+
+    // Vertex and edge rendering for models
+    void addVertex(const Vector3& vertex);
+    void clearVertices();
+    void setVertices(const std::vector<Vector3>& vertexList);
+    void addEdge(const Line& edge);
+    void clearEdges();
+    void setEdges(const std::vector<Line>& edgeList);
 
     // Camera control
     void setCamera(const Vector3& pos, const Vector3& target, const Vector3& up);

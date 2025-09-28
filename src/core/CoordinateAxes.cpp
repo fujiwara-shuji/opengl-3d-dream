@@ -4,10 +4,11 @@
 CoordinateAxes::CoordinateAxes()
     : showAxes(true)
     , axisLength(2.0f)
-    , axisThickness(1.0f)
+    , axisThickness(0.5f)
     , xAxisColor(1.0f, 0.0f, 0.0f)  // Red
     , yAxisColor(0.0f, 1.0f, 0.0f)  // Green
     , zAxisColor(0.0f, 0.0f, 1.0f)  // Blue
+    , originPoint(0.0f, 0.0f, 0.0f)  // Origin at (0,0,0)
 {
     createAxisLines();
 }

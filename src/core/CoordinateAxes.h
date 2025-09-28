@@ -6,8 +6,9 @@
 
 class CoordinateAxes {
 private:
-    // Axes lines
+    // Axes lines and origin point
     std::vector<Line> axisLines;
+    Vector3 originPoint;
 
     // Settings
     bool showAxes;
@@ -37,6 +38,7 @@ public:
 
     // Line access
     const std::vector<Line>& getAxisLines() const { return axisLines; }
+    const Vector3& getOriginPoint() const { return originPoint; }
 
     // Regenerate axes based on current settings
     void regenerateAxes();

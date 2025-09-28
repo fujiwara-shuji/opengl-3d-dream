@@ -22,7 +22,7 @@ InputHandler::InputHandler(GLFWwindow* window, Camera* camera, Model* model)
     , mouseDeltaX(0.0)
     , mouseDeltaY(0.0)
     , firstMouse(true)
-    , orbitSensitivity(0.005f)
+    , orbitSensitivity(0.001f)
     , zoomSensitivity(0.1f) {
 
     std::memset(mouseButtons, false, sizeof(mouseButtons));
