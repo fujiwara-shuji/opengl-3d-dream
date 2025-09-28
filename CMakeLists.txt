@@ -37,12 +37,13 @@ set(SOURCES
     # Math classes (Phase 1)
     src/math/Vector3.cpp
     src/math/Matrix4.cpp
-    # Core classes (Phase 1-2)
+    # Core classes (Phase 1-3)
     src/core/RayIntersection.cpp
+    src/core/Camera.cpp
     # Rendering classes (Phase 2)
     src/rendering/SoftwareRenderer.cpp
-    # Input classes (to be added in Phase 3)
-    # src/input/InputHandler.cpp
+    # Input classes (Phase 3)
+    src/input/InputHandler.cpp
     # UI classes (to be added in Phase 6)
     # src/ui/UI.cpp
 )
