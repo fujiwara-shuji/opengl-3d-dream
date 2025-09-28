@@ -5,6 +5,7 @@
 #include "../core/CoordinateAxes.h"
 #include "../input/InputHandler.h"
 #include "../rendering/SoftwareRenderer.h"
+#include "../ui/UI.h"
 #include "../utils/Utils.h"
 #include <iostream>
 #include <vector>
@@ -19,6 +20,7 @@ private:
     CoordinateAxes coordinateAxes;
     InputHandler *inputHandler;
     SoftwareRenderer renderer;
+    UI ui;
 
     int windowWidth = 1000;
     int windowHeight = 800;
@@ -93,6 +95,17 @@ public:
 
         // Initialize timing
         lastFrameTime = std::chrono::steady_clock::now();
+
+        // Initialize UI
+        ui.setCamera(&camera);
+        ui.setModel(&model);
+        ui.setCoordinateAxes(&coordinateAxes);
+        ui.setRenderer(&renderer);
+        ui.setWindowSize(windowWidth, windowHeight);
+        if (!ui.initialize(window)) {
+            Utils::logError("Failed to initialize UI");
+            return false;
+        }
 
         Utils::logInfo("Phase 5 Test Application initialized successfully");
         printControls();
@@ -246,8 +259,17 @@ public:
             // Render scene
             render();
 
+            // Start UI frame
+            ui.newFrame();
+
+            // Render UI
+            ui.render();
+
             // Display to window
             displayFrame();
+
+            // End UI frame (renders UI to screen)
+            ui.endFrame();
 
             // Swap buffers
             glfwSwapBuffers(window);
@@ -403,6 +425,9 @@ public:
 
     void cleanup()
     {
+        // Shutdown UI
+        ui.shutdown();
+
         if (inputHandler)
         {
             delete inputHandler;
@@ -467,6 +492,9 @@ public:
 
         // Resize pixel buffer
         pixelBuffer.resize(width * height * 3);
+
+        // Update UI window size
+        ui.setWindowSize(width, height);
 
         Utils::logInfo("Window resized to " + std::to_string(width) + "x" + std::to_string(height));
     }
