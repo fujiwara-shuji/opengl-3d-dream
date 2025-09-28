@@ -108,21 +108,21 @@ public:
         model.clear();
 
         // Base vertices (square base)
-        model.addVertex(-1.0f, -1.0f, 0.0f);  // 0: Bottom-left
-        model.addVertex(1.0f, -1.0f, 0.0f);   // 1: Bottom-right
-        model.addVertex(1.0f, 1.0f, 0.0f);    // 2: Top-right
-        model.addVertex(-1.0f, 1.0f, 0.0f);   // 3: Top-left
-        model.addVertex(0.0f, 0.0f, 2.0f);    // 4: Apex
+        model.addVertex(-1.0f, -1.0f, 0.0f); // 0: Bottom-left
+        model.addVertex(1.0f, -1.0f, 0.0f);  // 1: Bottom-right
+        model.addVertex(1.0f, 1.0f, 0.0f);   // 2: Top-right
+        model.addVertex(-1.0f, 1.0f, 0.0f);  // 3: Top-left
+        model.addVertex(0.0f, 0.0f, 2.0f);   // 4: Apex
 
         // Base faces (two triangles for the square base)
-        model.addFace(0, 1, 2);  // Bottom triangle 1
-        model.addFace(0, 2, 3);  // Bottom triangle 2
+        model.addFace(0, 1, 2); // Bottom triangle 1
+        model.addFace(0, 2, 3); // Bottom triangle 2
 
         // Side faces
-        model.addFace(0, 4, 1);  // Side 1
-        model.addFace(1, 4, 2);  // Side 2
-        model.addFace(2, 4, 3);  // Side 3
-        model.addFace(3, 4, 0);  // Side 4
+        model.addFace(0, 4, 1); // Side 1
+        model.addFace(1, 4, 2); // Side 2
+        model.addFace(2, 4, 3); // Side 3
+        model.addFace(3, 4, 0); // Side 4
 
         // Edges (manual addition for testing)
         // Base edges
@@ -147,11 +147,11 @@ public:
         // Clear existing triangles
         renderer.clearTriangles();
 
-        const auto& vertices = model.getVertices();
-        const auto& faces = model.getFaces();
+        const auto &vertices = model.getVertices();
+        const auto &faces = model.getFaces();
 
         // Add faces to renderer as triangles
-        for (const auto& face : faces)
+        for (const auto &face : faces)
         {
             Vector3 v0 = vertices[face.v1].position;
             Vector3 v1 = vertices[face.v2].position;
@@ -159,21 +159,52 @@ public:
 
             // Use different colors for different faces
             Vector3 color;
-            if (face.v1 == 0 && face.v2 == 1 && face.v3 == 2) {
-                color = Vector3(0.8f, 0.3f, 0.3f);  // Red base
-            } else if (face.v1 == 0 && face.v2 == 2 && face.v3 == 3) {
-                color = Vector3(0.8f, 0.3f, 0.3f);  // Red base
-            } else {
-                color = Vector3(0.4f, 0.7f, 0.4f);  // Green sides
+            if (face.v1 == 0 && face.v2 == 1 && face.v3 == 2)
+            {
+                color = Vector3(0.8f, 0.3f, 0.3f); // Red base
+            }
+            else if (face.v1 == 0 && face.v2 == 2 && face.v3 == 3)
+            {
+                color = Vector3(0.8f, 0.3f, 0.3f); // Red base
+            }
+            else
+            {
+                color = Vector3(0.4f, 0.7f, 0.4f); // Green sides
             }
 
             renderer.addTriangle(Triangle(v0, v1, v2, color));
         }
 
+        // Load vertices for rendering
+        std::vector<Vector3> vertexPositions;
+        for (const auto &vertex : vertices)
+        {
+            vertexPositions.push_back(vertex.position);
+        }
+
+        // Add origin point for reference
+        vertexPositions.push_back(coordinateAxes.getOriginPoint());
+
+        renderer.setVertices(vertexPositions);
+
+        // Load edges for rendering
+        const auto &edges = model.getEdges();
+        std::vector<Line> edgeLines;
+        for (const auto &edge : edges)
+        {
+            Vector3 start = vertices[edge.v1].position;
+            Vector3 end = vertices[edge.v2].position;
+            Vector3 edgeColor(0.9f, 0.9f, 0.9f); // Brighter gray for visibility
+            edgeLines.emplace_back(start, end, edgeColor, 1.0f);
+        }
+        renderer.setEdges(edgeLines);
+
         // Load coordinate axes
         renderer.setLines(coordinateAxes.getAxisLines());
 
         Utils::logInfo("Model loaded into renderer with " + std::to_string(faces.size()) + " triangles");
+        Utils::logInfo("Vertices loaded: " + std::to_string(vertices.size()));
+        Utils::logInfo("Edges loaded: " + std::to_string(edges.size()));
         Utils::logInfo("Coordinate axes loaded with " + std::to_string(coordinateAxes.getAxisLines().size()) + " lines");
     }
 
@@ -209,38 +240,44 @@ public:
     void handleKeyInput()
     {
         // R key: Reset camera to isometric view
-        if (inputHandler->isKeyPressed(GLFW_KEY_R)) {
+        if (inputHandler->isKeyPressed(GLFW_KEY_R))
+        {
             camera.setIsometricView();
             Utils::logInfo("Camera reset to isometric view");
         }
 
         // C key: Clear selection
-        if (inputHandler->isKeyPressed(GLFW_KEY_C)) {
+        if (inputHandler->isKeyPressed(GLFW_KEY_C))
+        {
             model.clearSelection();
             Utils::logInfo("Selection cleared");
         }
 
         // I key: Print model info
-        if (inputHandler->isKeyPressed(GLFW_KEY_I)) {
+        if (inputHandler->isKeyPressed(GLFW_KEY_I))
+        {
             printModelInfo();
         }
 
         // S key: Show selection info
-        if (inputHandler->isKeyPressed(GLFW_KEY_S)) {
+        if (inputHandler->isKeyPressed(GLFW_KEY_S))
+        {
             showSelectionInfo();
         }
 
         // T key: Cycle through threshold values
-        if (inputHandler->isKeyPressed(GLFW_KEY_T)) {
+        if (inputHandler->isKeyPressed(GLFW_KEY_T))
+        {
             static float thresholds[] = {0.05f, 0.1f, 0.2f, 0.5f};
-            static int currentThreshold = 1;  // Start with 0.1f
+            static int currentThreshold = 1; // Start with 0.1f
             currentThreshold = (currentThreshold + 1) % 4;
             inputHandler->setSelectionThreshold(thresholds[currentThreshold]);
             Utils::logInfo("Selection threshold set to: " + std::to_string(thresholds[currentThreshold]));
         }
 
         // A key: Toggle coordinate axes
-        if (inputHandler->isKeyPressed(GLFW_KEY_A)) {
+        if (inputHandler->isKeyPressed(GLFW_KEY_A))
+        {
             static bool axesVisible = true;
             axesVisible = !axesVisible;
             coordinateAxes.setVisible(axesVisible);
@@ -250,14 +287,17 @@ public:
         }
 
         // Plus/Minus keys: Adjust axis length
-        if (inputHandler->isKeyPressed(GLFW_KEY_EQUAL)) {  // + key
+        if (inputHandler->isKeyPressed(GLFW_KEY_EQUAL))
+        { // + key
             float currentLength = coordinateAxes.getAxisLength();
             coordinateAxes.setAxisLength(currentLength + 0.5f);
             renderer.setLines(coordinateAxes.getAxisLines());
         }
-        if (inputHandler->isKeyPressed(GLFW_KEY_MINUS)) {  // - key
+        if (inputHandler->isKeyPressed(GLFW_KEY_MINUS))
+        { // - key
             float currentLength = coordinateAxes.getAxisLength();
-            if (currentLength > 0.5f) {
+            if (currentLength > 0.5f)
+            {
                 coordinateAxes.setAxisLength(currentLength - 0.5f);
                 renderer.setLines(coordinateAxes.getAxisLines());
             }
@@ -299,10 +339,11 @@ public:
         std::cout << "Faces: " << model.getFaceCount() << "\n";
         std::cout << "Edges: " << model.getEdgeCount() << "\n";
 
-        const auto& vertices = model.getVertices();
+        const auto &vertices = model.getVertices();
         std::cout << "\nVertex positions:\n";
-        for (int i = 0; i < model.getVertexCount(); ++i) {
-            const auto& pos = vertices[i].position;
+        for (int i = 0; i < model.getVertexCount(); ++i)
+        {
+            const auto &pos = vertices[i].position;
             std::cout << "  " << i << ": (" << pos.x << ", " << pos.y << ", " << pos.z << ")\n";
         }
         std::cout << "======================\n\n";
@@ -310,14 +351,17 @@ public:
 
     void showSelectionInfo()
     {
-        if (model.hasSelection()) {
+        if (model.hasSelection())
+        {
             int selectedIndex = model.getSelectedVertexIndex();
             Vector3 position = model.getSelectedVertexPosition();
             std::cout << "\n===== SELECTION INFO =====\n";
             std::cout << "Selected vertex: " << selectedIndex << "\n";
             std::cout << "Position: (" << position.x << ", " << position.y << ", " << position.z << ")\n";
             std::cout << "==========================\n\n";
-        } else {
+        }
+        else
+        {
             std::cout << "\nNo vertex selected\n\n";
         }
     }

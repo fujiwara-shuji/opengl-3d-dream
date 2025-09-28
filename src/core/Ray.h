@@ -159,6 +159,22 @@ namespace RayIntersection {
     // Calculate distance between ray and line segment (from CLAUDE.md algorithm)
     float rayEdgeDistance(const Ray& ray, const Vector3& edgeStart, const Vector3& edgeEnd, float& rayParameter, float& edgeParameter);
 
+    // Screen-space based edge intersection (more accurate for rendering)
+    EdgeHit intersectEdgeScreenSpace(const Ray& ray, const Vector3& edgeStart, const Vector3& edgeEnd,
+                                    float threshold, int edgeIndex,
+                                    const Vector3& cameraPos, const Vector3& cameraTarget, const Vector3& cameraUp,
+                                    float fov, float aspectRatio);
+
+    // Screen-space based vertex intersection
+    VertexHit intersectVertexScreenSpace(const Ray& ray, const Vector3& vertex, float threshold, int vertexIndex,
+                                        const Vector3& cameraPos, const Vector3& cameraTarget, const Vector3& cameraUp,
+                                        float fov, float aspectRatio);
+
+    // Screen-space based line intersection (for coordinate axes)
+    LineHit intersectLineScreenSpace(const Ray& ray, const Line& line, float threshold, int lineIndex,
+                                    const Vector3& cameraPos, const Vector3& cameraTarget, const Vector3& cameraUp,
+                                    float fov, float aspectRatio);
+
     // Visibility checking for selection (occlusion test)
     bool isVertexVisible(const Vector3& cameraPos, const Vector3& vertex, const Model& model);
 
