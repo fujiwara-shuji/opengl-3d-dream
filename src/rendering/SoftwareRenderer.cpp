@@ -181,12 +181,12 @@ Ray SoftwareRenderer::generateCameraRay(int x, int y) const
 {
     // Convert screen coordinates to normalized device coordinates [-1, 1]
     float normalizedX = (2.0f * x / width) - 1.0f;
-    float normalizedY = 1.0f - (2.0f * y / height); // Flip Y coordinate
+    float normalizedY = 1.0f - (2.0f * y / height); // Standard screen to NDC conversion
 
-    // Calculate camera coordinate system
+    // Calculate camera coordinate system (right-hand rule)
     Vector3 forward = (cameraTarget - cameraPos).normalized();
     Vector3 right = Vector3::cross(forward, cameraUp).normalized();
-    Vector3 up = Vector3::cross(right, forward);
+    Vector3 up = cameraUp.normalized(); // Use provided up vector directly
 
     // Calculate ray direction
     float tanHalfFov = std::tan(fov * 0.5f);

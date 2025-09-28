@@ -5,11 +5,11 @@
 #include <algorithm>
 
 Camera::Camera()
-    : position(0, -5, 0)  // Start behind the scene looking forward
+    : position(0, -5, 0)  // Start behind the scene looking forward along +Y
     , target(0, 0, 0)
     , distance(5.0f)
     , pitch(0.0f)
-    , yaw(0.0f)  // 0 degrees = looking along +Y axis
+    , yaw(0.0f)  // 0 degrees = looking along +Y axis (front view)
     , up(0, 0, 1)  // Z-up coordinate system
     , fov(45.0f * Utils::DEG_TO_RAD)
     , aspectRatio(16.0f / 9.0f)
@@ -58,21 +58,24 @@ void Camera::zoom(float factor) {
 }
 
 void Camera::setFrontView() {
+    // Front view: looking along +Y axis (X=right, Z=up)
     pitch = 0.0f;
     yaw = 0.0f;
     invalidateView();
-    Utils::logInfo("Camera set to front view");
+    Utils::logInfo("Camera set to front view: pitch=0, yaw=0");
 }
 
 void Camera::setRightView() {
+    // Right view: looking along -X axis (Y=forward/depth, Z=up)
     pitch = 0.0f;
-    yaw = -90.0f * Utils::DEG_TO_RAD;
+    yaw = 90.0f * Utils::DEG_TO_RAD;  // Positive 90 degrees
     invalidateView();
     Utils::logInfo("Camera set to right view");
 }
 
 void Camera::setTopView() {
-    pitch = -89.0f * Utils::DEG_TO_RAD;  // Almost straight down
+    // Top view: looking down along -Z axis (X=right, Y=forward)
+    pitch = -89.0f * Utils::DEG_TO_RAD;  // Negative pitch looks down from above
     yaw = 0.0f;
     invalidateView();
     Utils::logInfo("Camera set to top view");
@@ -143,14 +146,15 @@ Vector3 Camera::getRightVector() const {
 Vector3 Camera::getUpVector() const {
     Vector3 forward = getForwardVector();
     Vector3 right = getRightVector();
-    return Vector3::cross(right, forward);
+    return Vector3::cross(forward, right); // Right-hand rule: forward × right = up
 }
 
 void Camera::updatePosition() const {
     // Convert spherical coordinates to Cartesian
-    // In our Z-up system:
+    // In our Z-up, right-hand coordinate system:
     // - Yaw rotates around Z axis (horizontal rotation)
     // - Pitch rotates from horizontal plane (vertical rotation)
+    // - X axis points right, Y axis points forward (into screen), Z axis points up
 
     float cosPitch = std::cos(pitch);
     float sinPitch = std::sin(pitch);
@@ -158,9 +162,9 @@ void Camera::updatePosition() const {
     float sinYaw = std::sin(yaw);
 
     // Calculate position relative to target
-    // Note: In Z-up system with Y pointing into screen
+    // Right-hand Z-up: X=right, Y=forward, Z=up
     float x = distance * cosPitch * sinYaw;
-    float y = -distance * cosPitch * cosYaw;  // Negative for proper orientation
+    float y = distance * cosPitch * cosYaw;   // Positive Y is forward (away from camera)
     float z = distance * sinPitch;
 
     Vector3 newPosition = target + Vector3(x, y, z);

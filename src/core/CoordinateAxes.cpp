@@ -66,5 +66,5 @@ void CoordinateAxes::createAxisLines() {
     Vector3 zEnd(0, 0, axisLength);
     axisLines.emplace_back(origin, zEnd, zAxisColor, axisThickness);
 
-    Utils::logInfo("Created coordinate axes: 3 lines, length=" + std::to_string(axisLength));
+    Utils::logInfo("Created coordinate axes: X(0,0,0)->(2,0,0), Y(0,0,0)->(0,2,0), Z(0,0,0)->(0,0,2)");
 }

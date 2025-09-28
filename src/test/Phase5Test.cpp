@@ -307,7 +307,7 @@ public:
     void render()
     {
         // Update renderer camera from our camera
-        renderer.setCamera(camera.getPosition(), camera.getTarget(), Vector3(0, 0, 1));
+        renderer.setCamera(camera.getPosition(), camera.getTarget(), camera.getUpVector());
 
         // Render the scene
         renderer.render();
