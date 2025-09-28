@@ -1,0 +1,174 @@
+#include "SoftwareRenderer.h"
+#include "../utils/Utils.h"
+#include <fstream>
+#include <iomanip>
+#include <cmath>
+
+void SoftwareRenderer::initialize() {
+    Utils::logInfo("Initializing Software Renderer");
+    setResolution(width, height);
+    Utils::logInfo("Software Renderer initialized with resolution " +
+                   std::to_string(width) + "x" + std::to_string(height));
+}
+
+void SoftwareRenderer::shutdown() {
+    Utils::logInfo("Shutting down Software Renderer");
+    pixels.clear();
+    triangles.clear();
+}
+
+void SoftwareRenderer::setResolution(int newWidth, int newHeight) {
+    width = newWidth;
+    height = newHeight;
+    aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+
+    // Resize pixel buffer
+    pixels.resize(width * height);
+    clear(Vector3(0.1f, 0.1f, 0.2f)); // Default dark blue background
+
+    Utils::logInfo("Resolution set to " + std::to_string(width) + "x" + std::to_string(height));
+}
+
+void SoftwareRenderer::clear(const Vector3& clearColor) {
+    std::fill(pixels.begin(), pixels.end(), clearColor);
+}
+
+void SoftwareRenderer::render() {
+    // Clear screen with sky gradient
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            Ray ray = generateCameraRay(x, y);
+            Vector3 color = castRay(ray);
+
+            // Clamp color values to [0, 1] range
+            color.x = Utils::clamp(color.x, 0.0f, 1.0f);
+            color.y = Utils::clamp(color.y, 0.0f, 1.0f);
+            color.z = Utils::clamp(color.z, 0.0f, 1.0f);
+
+            pixels[y * width + x] = color;
+        }
+    }
+}
+
+const std::vector<Vector3>& SoftwareRenderer::getPixelData() const {
+    return pixels;
+}
+
+void SoftwareRenderer::addTriangle(const Triangle& triangle) {
+    triangles.push_back(triangle);
+    Utils::logInfo("Added triangle to scene (total: " + std::to_string(triangles.size()) + ")");
+}
+
+void SoftwareRenderer::clearTriangles() {
+    triangles.clear();
+    Utils::logInfo("Cleared all triangles from scene");
+}
+
+void SoftwareRenderer::setCamera(const Vector3& pos, const Vector3& target, const Vector3& up) {
+    cameraPos = pos;
+    cameraTarget = target;
+    cameraUp = up.normalized();
+    Utils::logInfo("Camera set: pos=" + std::to_string(pos.x) + "," + std::to_string(pos.y) + "," + std::to_string(pos.z));
+}
+
+void SoftwareRenderer::setCameraFOV(float fovDegrees) {
+    fov = fovDegrees * Utils::DEG_TO_RAD;
+    Utils::logInfo("Camera FOV set to " + std::to_string(fovDegrees) + " degrees");
+}
+
+Ray SoftwareRenderer::generateCameraRay(int x, int y) const {
+    // Convert screen coordinates to normalized device coordinates [-1, 1]
+    float normalizedX = (2.0f * x / width) - 1.0f;
+    float normalizedY = 1.0f - (2.0f * y / height);  // Flip Y coordinate
+
+    // Calculate camera coordinate system
+    Vector3 forward = (cameraTarget - cameraPos).normalized();
+    Vector3 right = Vector3::cross(forward, cameraUp).normalized();
+    Vector3 up = Vector3::cross(right, forward);
+
+    // Calculate ray direction
+    float tanHalfFov = std::tan(fov * 0.5f);
+    Vector3 rayDir = forward +
+                     right * (normalizedX * aspectRatio * tanHalfFov) +
+                     up * (normalizedY * tanHalfFov);
+
+    return Ray(cameraPos, rayDir.normalized());
+}
+
+Vector3 SoftwareRenderer::castRay(const Ray& ray) const {
+    TriangleHit closestHit;
+    float closestDistance = std::numeric_limits<float>::max();
+    bool hitFound = false;
+
+    // Test ray against all triangles
+    for (const Triangle& triangle : triangles) {
+        TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
+
+        if (hit.hit && hit.distance < closestDistance && hit.distance > 0.001f) {
+            closestHit = hit;
+            closestDistance = hit.distance;
+            hitFound = true;
+        }
+    }
+
+    if (hitFound) {
+        // Find the triangle that was hit to get its color
+        for (const Triangle& triangle : triangles) {
+            TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
+            if (hit.hit && std::abs(hit.distance - closestDistance) < 0.001f) {
+                // Simple shading: darken back faces
+                float shading = closestHit.isFrontFace ? 1.0f : 0.7f;
+                return triangle.color * shading;
+            }
+        }
+
+        // Fallback color if triangle not found (shouldn't happen)
+        return Vector3(1.0f, 0.0f, 1.0f); // Magenta for debugging
+    }
+
+    // No hit - return sky color
+    return calculateSkyboxColor(ray);
+}
+
+Vector3 SoftwareRenderer::calculateSkyboxColor(const Ray& ray) const {
+    // Sky gradient based on ray direction (from CLAUDE.md)
+    Vector3 skyLightDirection = Vector3(1, -1, 1).normalized();  // Light source direction
+    Vector3 skyDarkColor = Vector3(0.1f, 0.1f, 0.2f);          // Dark blue
+    Vector3 skyBrightColor = Vector3(0.8f, 0.9f, 1.0f);        // Light blue
+
+    // Calculate alignment with light direction
+    float alignment = Vector3::dot(ray.direction, skyLightDirection);
+
+    // Map from [-1, 1] to [0, 1]
+    float t = (alignment + 1.0f) * 0.5f;
+
+    // Linear interpolation between dark and bright colors
+    return Vector3::lerp(skyDarkColor, skyBrightColor, t);
+}
+
+void SoftwareRenderer::saveAsText(const std::string& filename) const {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        Utils::logError("Cannot create file: " + filename);
+        return;
+    }
+
+    file << "Software Renderer Output (" << width << "x" << height << ")\n";
+    file << "Triangles: " << triangles.size() << "\n";
+    file << "Camera: pos=" << cameraPos << " target=" << cameraTarget << "\n\n";
+
+    // Sample a few pixels for verification
+    const int sampleStep = std::max(1, width / 20);
+    for (int y = 0; y < height; y += sampleStep) {
+        for (int x = 0; x < width; x += sampleStep) {
+            Vector3 color = pixels[y * width + x];
+            file << "(" << std::setw(3) << x << "," << std::setw(3) << y << "): "
+                 << std::fixed << std::setprecision(2)
+                 << "R=" << color.x << " G=" << color.y << " B=" << color.z << "\n";
+        }
+        file << "\n";
+    }
+
+    file.close();
+    Utils::logInfo("Renderer output saved to " + filename);
+}

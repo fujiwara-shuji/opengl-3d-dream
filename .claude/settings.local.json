@@ -10,7 +10,8 @@
       "Bash(./test-phase0)",
       "Bash(./build/test-phase0)",
       "Bash(./build/math-test)",
-      "Bash(./build/test-phase1)"
+      "Bash(./build/test-phase1)",
+      "Bash(./build/render-test)"
     ],
     "deny": [],
     "ask": []

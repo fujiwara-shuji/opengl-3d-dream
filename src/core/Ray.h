@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../math/Vector3.h"
+#include <iostream>
 
 struct Ray {
     Vector3 origin;
@@ -40,3 +41,28 @@ struct Ray {
         std::cout << "Ray: origin=" << origin << ", direction=" << direction << std::endl;
     }
 };
+
+// Intersection result structures
+struct TriangleHit {
+    bool hit = false;
+    float distance = 0.0f;
+    Vector3 point;
+    Vector3 normal;
+    bool isFrontFace = true;
+
+    TriangleHit() = default;
+    TriangleHit(bool hit, float distance, const Vector3& point, const Vector3& normal, bool isFrontFace)
+        : hit(hit), distance(distance), point(point), normal(normal), isFrontFace(isFrontFace) {}
+};
+
+// Ray-Triangle intersection functions
+namespace RayIntersection {
+    // Ray-triangle intersection (using the algorithm from CLAUDE.md)
+    TriangleHit intersectTriangle(const Ray& ray, const Vector3& v0, const Vector3& v1, const Vector3& v2);
+
+    // Point-in-triangle test (using left-hand side test from CLAUDE.md)
+    bool isPointInsideTriangle(const Vector3& point, const Vector3& v0, const Vector3& v1, const Vector3& v2, const Vector3& normal);
+
+    // Ray-plane intersection
+    bool intersectPlane(const Ray& ray, const Vector3& planePoint, const Vector3& planeNormal, float& distance, Vector3& hitPoint);
+}

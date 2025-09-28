@@ -37,12 +37,10 @@ set(SOURCES
     # Math classes (Phase 1)
     src/math/Vector3.cpp
     src/math/Matrix4.cpp
-    # Core classes (Phase 1 - basic structures)
-    # src/core/Ray.h (header-only)
-    # src/core/Model.cpp (Phase 4)
-    # src/core/Camera.cpp (Phase 3)
-    # Rendering classes (to be added in Phase 2)
-    # src/rendering/SoftwareRenderer.cpp
+    # Core classes (Phase 1-2)
+    src/core/RayIntersection.cpp
+    # Rendering classes (Phase 2)
+    src/rendering/SoftwareRenderer.cpp
     # Input classes (to be added in Phase 3)
     # src/input/InputHandler.cpp
     # UI classes (to be added in Phase 6)
