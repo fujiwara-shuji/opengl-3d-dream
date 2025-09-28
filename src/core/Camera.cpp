@@ -145,10 +145,10 @@ Vector3 Camera::getUpVector() const {
 
 void Camera::updatePosition() const {
     // Convert spherical coordinates to Cartesian
-    // In our Z-up, right-hand coordinate system:
+    // In our Z-up, left-hand coordinate system:
     // - Yaw rotates around Z axis (horizontal rotation)
     // - Pitch rotates from horizontal plane (vertical rotation)
-    // - X axis points right, Y axis points forward (into screen), Z axis points up
+    // - X axis points right, Y axis points toward camera (forward), Z axis points up
 
     float cosPitch = std::cos(pitch);
     float sinPitch = std::sin(pitch);
@@ -156,7 +156,7 @@ void Camera::updatePosition() const {
     float sinYaw = std::sin(yaw);
 
     // Calculate position relative to target
-    // Right-hand Z-up: X=right, Y=forward, Z=up
+    // Left-hand Z-up: X=right, Y=forward (toward camera), Z=up
     float x = distance * cosPitch * sinYaw;
     float y = distance * cosPitch * cosYaw;   // Positive Y is forward (away from camera)
     float z = distance * sinPitch;

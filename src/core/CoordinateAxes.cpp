@@ -54,17 +54,18 @@ void CoordinateAxes::createAxisLines() {
 
     Vector3 origin(0, 0, 0);
 
-    // X-axis (origin to +X direction) - Red
+    // Left-hand coordinate system axes
+    // X-axis (origin to +X direction) - Red (right)
     Vector3 xEnd(axisLength, 0, 0);
     axisLines.emplace_back(origin, xEnd, xAxisColor, axisThickness);
 
-    // Y-axis (origin to +Y direction) - Green
+    // Y-axis (origin to +Y direction) - Green (forward/toward camera)
     Vector3 yEnd(0, axisLength, 0);
     axisLines.emplace_back(origin, yEnd, yAxisColor, axisThickness);
 
-    // Z-axis (origin to +Z direction) - Blue
+    // Z-axis (origin to +Z direction) - Blue (up)
     Vector3 zEnd(0, 0, axisLength);
     axisLines.emplace_back(origin, zEnd, zAxisColor, axisThickness);
 
-    Utils::logInfo("Created coordinate axes: X(0,0,0)->(2,0,0), Y(0,0,0)->(0,2,0), Z(0,0,0)->(0,0,2)");
+    Utils::logInfo("Created coordinate axes (left-hand): X(0,0,0)->(2,0,0) Red, Y(0,0,0)->(0,2,0) Green, Z(0,0,0)->(0,0,2) Blue");
 }
