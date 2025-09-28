@@ -10,6 +10,24 @@ bool Application::initialize() {
         return false;
     }
 
+    // Test math library integration
+    Utils::logInfo("Testing math library integration...");
+    Vector3 testVec(1.0f, 2.0f, 3.0f);
+    Matrix4 testMatrix = Matrix4::identity();
+    Vector3 transformed = testMatrix.transformPoint(testVec);
+    Utils::logInfo("Math test: " + std::to_string(testVec.x) + ", " +
+                   std::to_string(testVec.y) + ", " + std::to_string(testVec.z) +
+                   " -> " + std::to_string(transformed.x) + ", " +
+                   std::to_string(transformed.y) + ", " + std::to_string(transformed.z));
+
+    // Test Ray class
+    Ray testRay(Vector3(0, 0, 0), Vector3(1, 0, 0));
+    Vector3 pointOnRay = testRay.getPoint(2.0f);
+    Utils::logInfo("Ray test: origin(0,0,0) + direction(1,0,0) * 2.0 = (" +
+                   std::to_string(pointOnRay.x) + ", " +
+                   std::to_string(pointOnRay.y) + ", " +
+                   std::to_string(pointOnRay.z) + ")");
+
     // TODO Phase 1: Initialize GLFW
     // if (!glfwInit()) {
     //     Utils::logError("Failed to initialize GLFW");

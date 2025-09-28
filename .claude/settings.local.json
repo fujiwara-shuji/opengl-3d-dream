@@ -8,7 +8,9 @@
       "Bash(make:*)",
       "Bash(g++:*)",
       "Bash(./test-phase0)",
-      "Bash(./build/test-phase0)"
+      "Bash(./build/test-phase0)",
+      "Bash(./build/math-test)",
+      "Bash(./build/test-phase1)"
     ],
     "deny": [],
     "ask": []

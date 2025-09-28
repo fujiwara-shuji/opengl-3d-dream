@@ -2,6 +2,9 @@
 
 #include <memory>
 #include <iostream>
+#include "math/Vector3.h"
+#include "math/Matrix4.h"
+#include "core/Ray.h"
 
 // Forward declarations (will be replaced with actual headers in later phases)
 // #include <GLFW/glfw3.h>  // Phase 1
