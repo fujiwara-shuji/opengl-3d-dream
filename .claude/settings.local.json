@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(tree:*)",
+      "Bash(cmake:*)",
+      "Bash(make:*)",
+      "Bash(g++:*)",
+      "Bash(./test-phase0)",
+      "Bash(./build/test-phase0)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
