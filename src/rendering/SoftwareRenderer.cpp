@@ -50,6 +50,37 @@ void SoftwareRenderer::render() {
     }
 }
 
+void SoftwareRenderer::render(const Model& model, const Camera& camera) {
+    // Set camera parameters from Camera object
+    cameraPos = camera.getPosition();
+    cameraTarget = camera.getTarget();
+    cameraUp = Vector3(0, 0, 1);  // Z-up coordinate system
+    fov = camera.getFOV();
+
+    // Clear existing triangles and convert Model to triangles
+    clearTriangles();
+
+    const auto& vertices = model.getVertices();
+    const auto& faces = model.getFaces();
+
+    // Convert Model faces to renderer triangles
+    for (const auto& face : faces) {
+        if (face.v1 < vertices.size() && face.v2 < vertices.size() && face.v3 < vertices.size()) {
+            const Vector3& v0 = vertices[face.v1].position;
+            const Vector3& v1 = vertices[face.v2].position;
+            const Vector3& v2 = vertices[face.v3].position;
+
+            // Use a default color for now (will be enhanced later)
+            Vector3 color(0.7f, 0.7f, 0.7f);  // Light gray
+
+            triangles.emplace_back(v0, v1, v2, color);
+        }
+    }
+
+    // Render the scene
+    render();
+}
+
 const std::vector<Vector3>& SoftwareRenderer::getPixelData() const {
     return pixels;
 }

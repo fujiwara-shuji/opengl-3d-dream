@@ -3,6 +3,8 @@
 #include "IRenderer.h"
 #include "../math/Vector3.h"
 #include "../core/Ray.h"
+#include "../core/Model.h"
+#include "../core/Camera.h"
 #include <vector>
 #include <memory>
 
@@ -38,6 +40,7 @@ public:
     void shutdown() override;
     void setResolution(int width, int height) override;
     void render() override;
+    void render(const Model& model, const Camera& camera) override;
     const std::vector<Vector3>& getPixelData() const override;
     void clear(const Vector3& clearColor) override;
 

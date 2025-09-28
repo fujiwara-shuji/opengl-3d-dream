@@ -4,6 +4,8 @@
 
 // Forward declarations
 struct Vector3;
+class Model;
+class Camera;
 
 class IRenderer {
 public:
@@ -16,6 +18,9 @@ public:
 
     // Render a frame
     virtual void render() = 0;
+
+    // Render a model with camera
+    virtual void render(const Model& model, const Camera& camera) = 0;
 
     // Get the rendered pixel data (RGB format)
     virtual const std::vector<Vector3>& getPixelData() const = 0;

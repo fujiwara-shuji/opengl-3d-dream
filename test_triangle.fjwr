@@ -1,0 +1,15 @@
+# Simple triangle test file
+# Format: .fjwr (Fujiwara format)
+
+# Three vertices forming a triangle
+v 0.0 0.0 0.0
+v 1.0 0.0 0.0
+v 0.5 1.0 0.0
+
+# One face (CCW winding)
+f 0 1 2
+
+# Three edges
+l 0 1
+l 1 2
+l 2 0
