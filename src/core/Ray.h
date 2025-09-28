@@ -81,12 +81,38 @@ struct EdgeHit {
         : hit(hit), distance(distance), point(point), edgeIndex(edgeIndex), edgeParameter(edgeParameter) {}
 };
 
+// Line structure for coordinate axes and other 3D lines
+struct Line {
+    Vector3 start;
+    Vector3 end;
+    Vector3 color;
+    float thickness;
+
+    Line() : start(Vector3::ZERO), end(Vector3::FORWARD), color(Vector3(1,1,1)), thickness(1.0f) {}
+    Line(const Vector3& start, const Vector3& end, const Vector3& color, float thickness = 1.0f)
+        : start(start), end(end), color(color), thickness(thickness) {}
+};
+
+// Line intersection result (similar to EdgeHit)
+struct LineHit {
+    bool hit = false;
+    float distance = 0.0f;
+    Vector3 point;
+    int lineIndex = -1;
+    float lineParameter = 0.0f;  // Position along line (0.0 to 1.0)
+
+    LineHit() = default;
+    LineHit(bool hit, float distance, const Vector3& point, int lineIndex, float lineParameter)
+        : hit(hit), distance(distance), point(point), lineIndex(lineIndex), lineParameter(lineParameter) {}
+};
+
 // Combined raycast result for Model intersection
 enum class RaycastResultType {
     NONE,
     VERTEX,
     EDGE,
-    FACE
+    FACE,
+    LINE
 };
 
 struct RaycastResult {
@@ -99,6 +125,7 @@ struct RaycastResult {
     TriangleHit triangleHit;
     VertexHit vertexHit;
     EdgeHit edgeHit;
+    LineHit lineHit;
 
     RaycastResult() = default;
 };
@@ -122,6 +149,9 @@ namespace RayIntersection {
 
     // Ray-edge intersection (closest approach distance check)
     EdgeHit intersectEdge(const Ray& ray, const Vector3& edgeStart, const Vector3& edgeEnd, float threshold, int edgeIndex);
+
+    // Ray-line intersection (same as edge but for coordinate axes and other lines)
+    LineHit intersectLine(const Ray& ray, const Line& line, float threshold, int lineIndex);
 
     // Calculate distance between ray and point
     float rayPointDistance(const Ray& ray, const Vector3& point, float& rayParameter);

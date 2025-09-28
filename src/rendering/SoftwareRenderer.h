@@ -23,6 +23,7 @@ private:
     int height = 480;
     std::vector<Vector3> pixels;
     std::vector<Triangle> triangles;
+    std::vector<Line> lines;  // Coordinate axes and other lines
 
     // Camera parameters
     Vector3 cameraPos = Vector3(0, 0, 5);
@@ -47,6 +48,11 @@ public:
     // Scene management
     void addTriangle(const Triangle& triangle);
     void clearTriangles();
+
+    // Line management for coordinate axes
+    void addLine(const Line& line);
+    void clearLines();
+    void setLines(const std::vector<Line>& lineList);
 
     // Camera control
     void setCamera(const Vector3& pos, const Vector3& target, const Vector3& up);

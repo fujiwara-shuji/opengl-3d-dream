@@ -95,6 +95,21 @@ void SoftwareRenderer::clearTriangles() {
     Utils::logInfo("Cleared all triangles from scene");
 }
 
+void SoftwareRenderer::addLine(const Line& line) {
+    lines.push_back(line);
+    Utils::logInfo("Added line to scene (total: " + std::to_string(lines.size()) + ")");
+}
+
+void SoftwareRenderer::clearLines() {
+    lines.clear();
+    Utils::logInfo("Cleared all lines from scene");
+}
+
+void SoftwareRenderer::setLines(const std::vector<Line>& lineList) {
+    lines = lineList;
+    Utils::logInfo("Set " + std::to_string(lines.size()) + " lines in scene");
+}
+
 void SoftwareRenderer::setCamera(const Vector3& pos, const Vector3& target, const Vector3& up) {
     cameraPos = pos;
     cameraTarget = target;
@@ -127,34 +142,40 @@ Ray SoftwareRenderer::generateCameraRay(int x, int y) const {
 }
 
 Vector3 SoftwareRenderer::castRay(const Ray& ray) const {
-    TriangleHit closestHit;
     float closestDistance = std::numeric_limits<float>::max();
     bool hitFound = false;
+    Vector3 hitColor;
 
-    // Test ray against all triangles
-    for (const Triangle& triangle : triangles) {
-        TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
+    // Test ray against all lines first (coordinate axes should be visible over triangles when very close)
+    for (size_t i = 0; i < lines.size(); ++i) {
+        const Line& line = lines[i];
+        LineHit lineHit = RayIntersection::intersectLine(ray, line, 0.01f, static_cast<int>(i));
 
-        if (hit.hit && hit.distance < closestDistance && hit.distance > 0.001f) {
-            closestHit = hit;
-            closestDistance = hit.distance;
+        if (lineHit.hit && lineHit.distance < closestDistance && lineHit.distance > 0.001f) {
+            closestDistance = lineHit.distance;
+            hitColor = line.color;
             hitFound = true;
         }
     }
 
-    if (hitFound) {
-        // Find the triangle that was hit to get its color
-        for (const Triangle& triangle : triangles) {
-            TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
-            if (hit.hit && std::abs(hit.distance - closestDistance) < 0.001f) {
-                // Simple shading: darken back faces
-                float shading = closestHit.isFrontFace ? 1.0f : 0.7f;
-                return triangle.color * shading;
-            }
-        }
+    // Test ray against all triangles
+    TriangleHit closestTriangleHit;
+    for (const Triangle& triangle : triangles) {
+        TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
 
-        // Fallback color if triangle not found (shouldn't happen)
-        return Vector3(1.0f, 0.0f, 1.0f); // Magenta for debugging
+        if (hit.hit && hit.distance < closestDistance && hit.distance > 0.001f) {
+            closestTriangleHit = hit;
+            closestDistance = hit.distance;
+            hitFound = true;
+
+            // Find triangle color
+            float shading = hit.isFrontFace ? 1.0f : 0.7f;
+            hitColor = triangle.color * shading;
+        }
+    }
+
+    if (hitFound) {
+        return hitColor;
     }
 
     // No hit - return sky color

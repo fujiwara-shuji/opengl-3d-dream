@@ -2,6 +2,7 @@
 #include <GL/gl.h>
 #include "../core/Camera.h"
 #include "../core/Model.h"
+#include "../core/CoordinateAxes.h"
 #include "../input/InputHandler.h"
 #include "../rendering/SoftwareRenderer.h"
 #include "../utils/Utils.h"
@@ -15,6 +16,7 @@ private:
     GLFWwindow *window;
     Camera camera;
     Model model;
+    CoordinateAxes coordinateAxes;
     InputHandler *inputHandler;
     SoftwareRenderer renderer;
 
@@ -168,7 +170,11 @@ public:
             renderer.addTriangle(Triangle(v0, v1, v2, color));
         }
 
+        // Load coordinate axes
+        renderer.setLines(coordinateAxes.getAxisLines());
+
         Utils::logInfo("Model loaded into renderer with " + std::to_string(faces.size()) + " triangles");
+        Utils::logInfo("Coordinate axes loaded with " + std::to_string(coordinateAxes.getAxisLines().size()) + " lines");
     }
 
     void run()
@@ -231,6 +237,30 @@ public:
             currentThreshold = (currentThreshold + 1) % 4;
             inputHandler->setSelectionThreshold(thresholds[currentThreshold]);
             Utils::logInfo("Selection threshold set to: " + std::to_string(thresholds[currentThreshold]));
+        }
+
+        // A key: Toggle coordinate axes
+        if (inputHandler->isKeyPressed(GLFW_KEY_A)) {
+            static bool axesVisible = true;
+            axesVisible = !axesVisible;
+            coordinateAxes.setVisible(axesVisible);
+            coordinateAxes.regenerateAxes();
+            renderer.setLines(coordinateAxes.getAxisLines());
+            Utils::logInfo(axesVisible ? "Coordinate axes enabled" : "Coordinate axes disabled");
+        }
+
+        // Plus/Minus keys: Adjust axis length
+        if (inputHandler->isKeyPressed(GLFW_KEY_EQUAL)) {  // + key
+            float currentLength = coordinateAxes.getAxisLength();
+            coordinateAxes.setAxisLength(currentLength + 0.5f);
+            renderer.setLines(coordinateAxes.getAxisLines());
+        }
+        if (inputHandler->isKeyPressed(GLFW_KEY_MINUS)) {  // - key
+            float currentLength = coordinateAxes.getAxisLength();
+            if (currentLength > 0.5f) {
+                coordinateAxes.setAxisLength(currentLength - 0.5f);
+                renderer.setLines(coordinateAxes.getAxisLines());
+            }
         }
     }
 
@@ -350,6 +380,9 @@ public:
         std::cout << "I KEY              : Print model info\n";
         std::cout << "S KEY              : Show selection info\n";
         std::cout << "T KEY              : Cycle selection threshold\n";
+        std::cout << "A KEY              : Toggle coordinate axes\n";
+        std::cout << "+ KEY              : Increase axis length\n";
+        std::cout << "- KEY              : Decrease axis length\n";
         std::cout << "ESC                : Exit\n";
         std::cout << "==================================\n\n";
     }

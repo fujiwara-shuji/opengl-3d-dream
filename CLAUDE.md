@@ -45,6 +45,7 @@ l 0 1            # 辺（頂点インデックス2個）
 Application（メインアプリケーション）
 ├── Model（データ管理・ファイルI/O）
 ├── Camera（視点操作）
+├── CoordinateAxes（座標軸表示・管理）
 ├── IRenderer（レンダリングインターフェース）
 │   └── SoftwareRenderer（ソフトウェアレイトレーシング実装）
 ├── InputHandler（マウス・キーボード処理）
@@ -218,6 +219,140 @@ class Camera {
 - **View**: プリセット視点、選択頂点フォーカス
 - **Help**: 操作方法、このソフトについて
 
+## 座標軸システム
+
+### 概要
+
+3D空間の向きを視覚的に理解するための座標軸表示システム。X軸（赤）、Y軸（緑）、Z軸（青）を原点から各軸方向に表示する。
+
+### 実装仕様
+
+#### 座標軸の定義
+- **X軸**: 赤色 (1.0, 0.0, 0.0) - 右方向
+- **Y軸**: 緑色 (0.0, 1.0, 0.0) - 奥方向
+- **Z軸**: 青色 (0.0, 0.0, 1.0) - 上方向
+- **基点**: 原点 (0, 0, 0)
+- **長さ**: 設定可能（デフォルト 2.0単位）
+
+#### 3D描画による隠蔽処理
+座標軸は3Dオブジェクトとして扱われ、正しい隠蔽処理を行う：
+
+```cpp
+// Line構造体（座標軸の線分表現）
+struct Line {
+    Vector3 start;      // 線分開始点
+    Vector3 end;        // 線分終了点
+    Vector3 color;      // 線の色
+    float thickness;    // 線の太さ
+};
+
+// Ray-Line交差判定（辺と同様のアルゴリズム）
+LineHit intersectLine(const Ray& ray, const Line& line, float threshold, int lineIndex) {
+    // rayEdgeDistance()を活用
+    // 線の太さを考慮した閾値計算
+    // 正確な交差点とパラメータを返す
+}
+```
+
+#### レンダリング統合
+SoftwareRenderer で線分と面の距離比較により正確な描画順序を実現：
+
+```cpp
+Vector3 castRay(const Ray& ray) const {
+    float closestDistance = std::numeric_limits<float>::max();
+    Vector3 hitColor;
+
+    // 1. ライン（座標軸）との交差判定
+    for (const Line& line : lines) {
+        LineHit hit = RayIntersection::intersectLine(ray, line, threshold, index);
+        if (hit.hit && hit.distance < closestDistance) {
+            closestDistance = hit.distance;
+            hitColor = line.color;
+        }
+    }
+
+    // 2. 三角形（面）との交差判定
+    for (const Triangle& triangle : triangles) {
+        TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, v1, v2);
+        if (hit.hit && hit.distance < closestDistance) {
+            closestDistance = hit.distance;
+            hitColor = triangle.color * shading;
+        }
+    }
+
+    return hitColor;  // 最前面のオブジェクトの色を返す
+}
+```
+
+### CoordinateAxes クラス設計
+
+```cpp
+class CoordinateAxes {
+private:
+    std::vector<Line> axisLines;    // 3本の軸線
+    bool showAxes;                  // 表示/非表示
+    float axisLength;               // 軸の長さ
+    float axisThickness;            // 軸の太さ
+    Vector3 xAxisColor, yAxisColor, zAxisColor;  // 各軸の色
+
+public:
+    // 設定管理
+    void setVisible(bool visible);
+    void setAxisLength(float length);
+    void setAxisThickness(float thickness);
+    void setAxisColors(const Vector3& x, const Vector3& y, const Vector3& z);
+
+    // 軸データアクセス
+    const std::vector<Line>& getAxisLines() const;
+    void regenerateAxes();  // 設定変更時の軸再生成
+
+private:
+    void createAxisLines();  // 3本の軸線を生成
+};
+```
+
+### 操作仕様
+
+#### キーボードコントロール
+- **Aキー**: 座標軸表示の切り替え（表示/非表示）
+- **+キー**: 軸の長さを 0.5単位 増加
+- **-キー**: 軸の長さを 0.5単位 減少（最小 0.5単位）
+
+#### UI統合（Phase 6 予定）
+```cpp
+// Dear ImGui での座標軸設定パネル
+void UI::renderAxisSettings() {
+    if (ImGui::CollapsingHeader("Coordinate Axes")) {
+        ImGui::Checkbox("Show Axes", &showAxes);
+
+        if (showAxes) {
+            ImGui::SliderFloat("Axis Length", &axisLength, 0.5f, 5.0f);
+            ImGui::SliderFloat("Axis Thickness", &axisThickness, 0.5f, 3.0f);
+            ImGui::ColorEdit3("X Axis Color", &xAxisColor.x);
+            ImGui::ColorEdit3("Y Axis Color", &yAxisColor.x);
+            ImGui::ColorEdit3("Z Axis Color", &zAxisColor.x);
+        }
+    }
+}
+```
+
+### 技術的特徴
+
+#### 正確な3D描画
+- レイトレーシングによる正確な距離計算
+- 面による軸の遮蔽を正しく処理
+- 軸が他のオブジェクトの背後にある場合は表示されない
+
+#### 効率的な実装
+- 既存の `rayEdgeDistance` アルゴリズムを再利用
+- Model クラスと独立した設計
+- SoftwareRenderer への軽量な統合
+
+#### 拡張性
+- 軸の色・長さ・太さのカスタマイズ
+- 将来的な軸ラベル表示への対応
+- グリッド表示への拡張可能性
+
 ## 描画設定
 
 ### 色設定
@@ -225,6 +360,7 @@ class Camera {
 - **頂点色**: 通常（白）、選択中（オレンジ）
 - **辺色**: 薄いグレー
 - **面色**: 表面（濃いグレー）、裏面（より濃いグレー）
+- **座標軸色**: X軸（赤）、Y軸（緑）、Z軸（青）
 - **背景**: 環境光グラデーション
 
 ### 表示制御
@@ -232,6 +368,7 @@ class Camera {
 - **頂点**: 表示/非表示切り替え
 - **辺**: 表示/非表示切り替え
 - **面**: 表示/非表示、表面/裏面個別制御
+- **座標軸**: 表示/非表示切り替え、長さ・太さ調整
 - **反射**: 有効/無効、反射率調整
 
 ## 実装の優先順位
@@ -309,6 +446,28 @@ class Camera {
 1. 頂点・辺の交差判定
 2. 可視性チェック
 3. 選択機能
+
+### Phase 5.5: 座標軸システム（実装済み）
+
+1. **Line構造体と交差判定**
+   - Line 構造体の定義
+   - LineHit 結果構造体
+   - RayIntersection::intersectLine() 実装
+
+2. **CoordinateAxes クラス**
+   - 3軸（X:赤、Y:緑、Z:青）の生成・管理
+   - 表示設定と動的な長さ・太さ調整
+   - 軸線データのレンダラー統合
+
+3. **SoftwareRenderer 拡張**
+   - ライン描画機能の追加
+   - 線分と三角形の統合された距離判定
+   - 正確な隠蔽処理の実装
+
+4. **Phase5Test 統合**
+   - 座標軸の表示確認
+   - キーボードコントロール（A, +, -キー）
+   - リアルタイム設定変更
 
 ### Phase 6: UI・編集機能
 

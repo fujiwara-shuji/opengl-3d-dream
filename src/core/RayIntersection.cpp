@@ -174,6 +174,26 @@ namespace RayIntersection {
         return result;
     }
 
+    LineHit intersectLine(const Ray& ray, const Line& line, float threshold, int lineIndex) {
+        LineHit result;
+
+        float rayParam, lineParam;
+        float distance = rayEdgeDistance(ray, line.start, line.end, rayParam, lineParam);
+
+        // Use line thickness as additional threshold factor
+        float effectiveThreshold = threshold * line.thickness;
+
+        if (distance <= effectiveThreshold) {
+            result.hit = true;
+            result.distance = rayParam;
+            result.point = line.start + (line.end - line.start) * lineParam;
+            result.lineIndex = lineIndex;
+            result.lineParameter = lineParam;
+        }
+
+        return result;
+    }
+
     bool isVertexVisible(const Vector3& cameraPos, const Vector3& vertex, const class Model& model) {
         // Create ray from camera to vertex
         Vector3 direction = (vertex - cameraPos).normalized();
