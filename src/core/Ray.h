@@ -103,6 +103,9 @@ struct RaycastResult {
     RaycastResult() = default;
 };
 
+// Forward declaration for Model class
+class Model;
+
 // Ray intersection functions
 namespace RayIntersection {
     // Ray-triangle intersection (using the algorithm from CLAUDE.md)
@@ -127,8 +130,8 @@ namespace RayIntersection {
     float rayEdgeDistance(const Ray& ray, const Vector3& edgeStart, const Vector3& edgeEnd, float& rayParameter, float& edgeParameter);
 
     // Visibility checking for selection (occlusion test)
-    bool isVertexVisible(const Vector3& cameraPos, const Vector3& vertex, const class Model& model);
+    bool isVertexVisible(const Vector3& cameraPos, const Vector3& vertex, const Model& model);
 
     // Combined model intersection (finds closest hit among vertices, edges, faces)
-    RaycastResult findClosestIntersection(const Ray& ray, const class Model& model, float vertexThreshold, float edgeThreshold);
+    RaycastResult findClosestIntersection(const Ray& ray, const Model& model, float vertexThreshold, float edgeThreshold);
 }

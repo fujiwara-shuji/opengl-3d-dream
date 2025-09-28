@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "Ray.h"
 #include "../utils/Utils.h"
 #include <cmath>
 #include <algorithm>
@@ -206,4 +207,26 @@ float Camera::normalizeYaw(float y) const {
     while (y > Utils::PI) y -= 2.0f * Utils::PI;
     while (y < -Utils::PI) y += 2.0f * Utils::PI;
     return y;
+}
+
+Ray Camera::screenToWorldRay(double screenX, double screenY, int windowWidth, int windowHeight) const {
+    // Convert screen coordinates to normalized device coordinates (-1 to 1)
+    float x = (2.0f * static_cast<float>(screenX) / windowWidth) - 1.0f;
+    float y = 1.0f - (2.0f * static_cast<float>(screenY) / windowHeight);
+
+    // Get view-projection matrix inverse
+    Matrix4 viewProjMatrix = getProjectionMatrix() * getViewMatrix();
+    Matrix4 invViewProj = viewProjMatrix.inverse();
+
+    // Points in normalized device coordinates
+    Vector3 nearPoint(x, y, -1.0f);  // Near plane
+    Vector3 farPoint(x, y, 1.0f);    // Far plane
+
+    // Transform to world coordinates
+    Vector3 worldNear = invViewProj * nearPoint;
+    Vector3 worldFar = invViewProj * farPoint;
+
+    // Create ray
+    Vector3 direction = (worldFar - worldNear).normalized();
+    return Ray(getPosition(), direction);
 }

@@ -3,6 +3,9 @@
 #include "../math/Vector3.h"
 #include "../math/Matrix4.h"
 
+// Forward declarations
+struct Ray;
+
 class Camera {
 private:
     // Camera position (calculated from target, distance, pitch, yaw)
@@ -71,6 +74,9 @@ public:
     Vector3 getForwardVector() const;
     Vector3 getRightVector() const;
     Vector3 getUpVector() const;
+
+    // Ray casting
+    Ray screenToWorldRay(double screenX, double screenY, int windowWidth, int windowHeight) const;
 
 private:
     void updatePosition() const;

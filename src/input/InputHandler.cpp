@@ -1,5 +1,7 @@
 #include "InputHandler.h"
 #include "../core/Camera.h"
+#include "../core/Model.h"
+#include "../core/Ray.h"
 #include "../utils/Utils.h"
 #include <GLFW/glfw3.h>
 #include <cstring>
@@ -9,10 +11,12 @@
 void* InputHandler::externalUserPointer = nullptr;
 void (*InputHandler::externalResizeCallback)(void* userPtr, int width, int height) = nullptr;
 
-InputHandler::InputHandler(GLFWwindow* window, Camera* camera)
+InputHandler::InputHandler(GLFWwindow* window, Camera* camera, Model* model)
     : window(window)
     , camera(camera)
     , currentMode(InputMode::NORMAL)
+    , model(model)
+    , baseSelectionThreshold(0.1f)
     , lastMouseX(0.0)
     , lastMouseY(0.0)
     , mouseDeltaX(0.0)
@@ -148,6 +152,34 @@ void InputHandler::mouseButtonCallback(GLFWwindow* window, int button, int actio
                 handler->firstMouse = true;  // Reset mouse tracking
             } else if (action == GLFW_RELEASE) {
                 handler->setMode(InputMode::NORMAL);
+            }
+        }
+        // Handle left click for vertex selection
+        else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            if (handler->model && handler->camera) {
+                // Get mouse position
+                double mouseX, mouseY;
+                glfwGetCursorPos(window, &mouseX, &mouseY);
+
+                // Get window size for screen-to-world conversion
+                int windowWidth, windowHeight;
+                glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+                // Create ray from camera through mouse position
+                Ray ray = handler->camera->screenToWorldRay(mouseX, mouseY, windowWidth, windowHeight);
+
+                // Attempt vertex selection
+                bool selected = handler->model->selectVertex(ray, *handler->camera, handler->baseSelectionThreshold);
+
+                if (selected) {
+                    int selectedIndex = handler->model->getSelectedVertexIndex();
+                    Vector3 position = handler->model->getSelectedVertexPosition();
+                    Utils::logInfo("Selected vertex " + std::to_string(selectedIndex) +
+                                   " at position (" + std::to_string(position.x) + "," +
+                                   std::to_string(position.y) + "," + std::to_string(position.z) + ")");
+                } else {
+                    Utils::logInfo("No vertex selected");
+                }
             }
         }
     }
