@@ -11,7 +11,9 @@
       "Bash(./build/test-phase0)",
       "Bash(./build/math-test)",
       "Bash(./build/test-phase1)",
-      "Bash(./build/render-test)"
+      "Bash(./build/render-test)",
+      "Bash(./test-phase5)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

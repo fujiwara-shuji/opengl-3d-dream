@@ -203,65 +203,77 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray) const
     bool hitFound = false;
     Vector3 hitColor;
 
-    // Test ray against vertices first (highest priority)
-    for (size_t i = 0; i < vertices.size(); ++i)
+    // Test ray against vertices first (highest priority) - only if vertices are enabled
+    if (config.showVertices)
     {
-        VertexHit vertexHit = RayIntersection::intersectVertexScreenSpace(ray, vertices[i], config.vertexThreshold, static_cast<int>(i),
-                                                                          cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
-
-        if (vertexHit.hit && vertexHit.distance < closestDistance && vertexHit.distance > config.rayEpsilon)
+        for (size_t i = 0; i < vertices.size(); ++i)
         {
-            closestDistance = vertexHit.distance;
-            hitColor = Vector3(1.0f, 1.0f, 1.0f); // White for vertices
-            hitFound = true;
+            VertexHit vertexHit = RayIntersection::intersectVertexScreenSpace(ray, vertices[i], config.vertexDisplayRadius, static_cast<int>(i),
+                                                                              cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
+
+            if (vertexHit.hit && vertexHit.distance < closestDistance && vertexHit.distance > config.rayEpsilon)
+            {
+                closestDistance = vertexHit.distance;
+                hitColor = Vector3(1.0f, 1.0f, 1.0f); // White for vertices
+                hitFound = true;
+            }
         }
     }
 
-    // Test ray against edges
-    for (size_t i = 0; i < edges.size(); ++i)
+    // Test ray against edges - only if edges are enabled
+    if (config.showEdges)
     {
-        const Line &edge = edges[i];
-        EdgeHit edgeHit = RayIntersection::intersectEdgeScreenSpace(ray, edge.start, edge.end, config.edgeThreshold, static_cast<int>(i),
-                                                                    cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
-
-        if (edgeHit.hit && edgeHit.distance < closestDistance && edgeHit.distance > config.rayEpsilon)
+        for (size_t i = 0; i < edges.size(); ++i)
         {
-            closestDistance = edgeHit.distance;
-            hitColor = Vector3(0.7f, 0.7f, 0.7f); // Light gray for edges
-            hitFound = true;
+            const Line &edge = edges[i];
+            EdgeHit edgeHit = RayIntersection::intersectEdgeScreenSpace(ray, edge.start, edge.end, config.edgeDisplayThickness, static_cast<int>(i),
+                                                                        cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
+
+            if (edgeHit.hit && edgeHit.distance < closestDistance && edgeHit.distance > config.rayEpsilon)
+            {
+                closestDistance = edgeHit.distance;
+                hitColor = Vector3(0.7f, 0.7f, 0.7f); // Light gray for edges
+                hitFound = true;
+            }
         }
     }
 
-    // Test ray against coordinate axes (should be visible over triangles when very close)
-    for (size_t i = 0; i < lines.size(); ++i)
+    // Test ray against coordinate axes (should be visible over triangles when very close) - only if axes are enabled
+    if (config.showCoordinateAxes)
     {
-        const Line &line = lines[i];
-        LineHit lineHit = RayIntersection::intersectLineScreenSpace(ray, line, config.lineThickness, static_cast<int>(i),
-                                                                    cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
-
-        if (lineHit.hit && lineHit.distance < closestDistance && lineHit.distance > config.rayEpsilon)
+        for (size_t i = 0; i < lines.size(); ++i)
         {
-            closestDistance = lineHit.distance;
-            hitColor = line.color;
-            hitFound = true;
+            const Line &line = lines[i];
+            LineHit lineHit = RayIntersection::intersectLineScreenSpace(ray, line, config.lineThickness, static_cast<int>(i),
+                                                                        cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
+
+            if (lineHit.hit && lineHit.distance < closestDistance && lineHit.distance > config.rayEpsilon)
+            {
+                closestDistance = lineHit.distance;
+                hitColor = line.color;
+                hitFound = true;
+            }
         }
     }
 
-    // Test ray against all triangles
-    TriangleHit closestTriangleHit;
-    for (const Triangle &triangle : triangles)
+    // Test ray against all triangles - only if faces are enabled
+    if (config.showFaces)
     {
-        TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
-
-        if (hit.hit && hit.distance < closestDistance && hit.distance > config.rayEpsilon)
+        TriangleHit closestTriangleHit;
+        for (const Triangle &triangle : triangles)
         {
-            closestTriangleHit = hit;
-            closestDistance = hit.distance;
-            hitFound = true;
+            TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
 
-            // Find triangle color
-            float shading = hit.isFrontFace ? 1.0f : 0.7f;
-            hitColor = triangle.color * shading;
+            if (hit.hit && hit.distance < closestDistance && hit.distance > config.rayEpsilon)
+            {
+                closestTriangleHit = hit;
+                closestDistance = hit.distance;
+                hitFound = true;
+
+                // Find triangle color
+                float shading = hit.isFrontFace ? 1.0f : 0.7f;
+                hitColor = triangle.color * shading;
+            }
         }
     }
 

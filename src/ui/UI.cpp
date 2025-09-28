@@ -218,7 +218,7 @@ void UI::renderToolPanel() {
 
 void UI::renderModelInfoPanel() {
     #ifdef IMGUI_AVAILABLE
-    if (imguiAvailable && ImGui::CollapsingHeader("Model Information")) {
+    if (imguiAvailable && ImGui::CollapsingHeader("Model Information", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (model) {
             ImGui::Text("Vertices: %d", model->getVertexCount());
             ImGui::Text("Faces: %d", model->getFaceCount());
@@ -234,7 +234,7 @@ void UI::renderModelInfoPanel() {
 
 void UI::renderSelectionInfoPanel() {
     #ifdef IMGUI_AVAILABLE
-    if (imguiAvailable && ImGui::CollapsingHeader("Selection Information")) {
+    if (imguiAvailable && ImGui::CollapsingHeader("Selection Information", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (model && model->hasSelection()) {
             int selectedIndex = model->getSelectedVertexIndex();
             Vector3 position = model->getSelectedVertexPosition();
@@ -255,7 +255,7 @@ void UI::renderSelectionInfoPanel() {
 
 void UI::renderDisplaySettingsPanel() {
     #ifdef IMGUI_AVAILABLE
-    if (imguiAvailable && ImGui::CollapsingHeader("Display Settings")) {
+    if (imguiAvailable && ImGui::CollapsingHeader("Display Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
         bool changed = false;
 
         changed |= ImGui::Checkbox("Show Vertices", &displayVertices);
@@ -271,7 +271,7 @@ void UI::renderDisplaySettingsPanel() {
 
 void UI::renderAxesSettingsPanel() {
     #ifdef IMGUI_AVAILABLE
-    if (imguiAvailable && ImGui::CollapsingHeader("Coordinate Axes")) {
+    if (imguiAvailable && ImGui::CollapsingHeader("Coordinate Axes", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (coordinateAxes) {
             bool axesVisible = coordinateAxes->isVisible();
             if (ImGui::Checkbox("Show Axes", &axesVisible)) {
@@ -279,6 +279,7 @@ void UI::renderAxesSettingsPanel() {
                 coordinateAxes->regenerateAxes();
                 if (renderer) {
                     renderer->setLines(coordinateAxes->getAxisLines());
+                    renderer->setShowCoordinateAxes(axesVisible);
                 }
             }
 
@@ -305,11 +306,15 @@ void UI::renderAxesSettingsPanel() {
 }
 
 void UI::applyDisplaySettings() {
-    // This would apply display settings to the renderer
-    // For now, just log the changes
-    Utils::logInfo("Display settings changed: Vertices=" + std::to_string(displayVertices) +
-                  ", Edges=" + std::to_string(displayEdges) +
-                  ", Faces=" + std::to_string(displayFaces));
+    if (renderer) {
+        renderer->setShowVertices(displayVertices);
+        renderer->setShowEdges(displayEdges);
+        renderer->setShowFaces(displayFaces);
+
+        Utils::logInfo("Display settings applied: Vertices=" + std::to_string(displayVertices) +
+                      ", Edges=" + std::to_string(displayEdges) +
+                      ", Faces=" + std::to_string(displayFaces));
+    }
 }
 
 void UI::applyAxesSettings() {

@@ -107,6 +107,22 @@ public:
             return false;
         }
 
+        // Apply initial display settings from UI to renderer
+        renderer.setShowVertices(true);
+        renderer.setShowEdges(true);
+        renderer.setShowFaces(true);
+        renderer.setShowCoordinateAxes(coordinateAxes.isVisible());
+
+        // Configure separated display and selection thresholds
+        renderer.setVertexDisplayRadius(0.015f);         // Small visual display radius
+        renderer.setVertexSelectionThreshold(0.05f);     // Larger click selection range
+        renderer.setEdgeDisplayThickness(0.01f);         // Thin visual edge thickness
+        renderer.setEdgeSelectionThreshold(0.02f);       // Wider click selection range
+
+        // Enable debug mode for easier vertex selection (disable visibility check)
+        model.setDisableVisibilityCheck(true);
+        Utils::logInfo("Visibility check disabled for easier vertex selection");
+
         Utils::logInfo("Phase 5 Test Application initialized successfully");
         printControls();
 

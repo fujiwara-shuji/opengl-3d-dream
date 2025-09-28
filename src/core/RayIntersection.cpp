@@ -252,10 +252,11 @@ namespace RayIntersection
         return result;
     }
 
-    EdgeHit intersectEdgeScreenSpace(const Ray& ray, const Vector3& edgeStart, const Vector3& edgeEnd,
-                                    float threshold, int edgeIndex,
-                                    const Vector3& cameraPos, const Vector3& cameraTarget, const Vector3& cameraUp,
-                                    float fov, float aspectRatio) {
+    EdgeHit intersectEdgeScreenSpace(const Ray &ray, const Vector3 &edgeStart, const Vector3 &edgeEnd,
+                                     float threshold, int edgeIndex,
+                                     const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUp,
+                                     float fov, float aspectRatio)
+    {
         EdgeHit result;
 
         // Calculate camera coordinate system
@@ -264,10 +265,12 @@ namespace RayIntersection
         Vector3 up = Vector3::cross(right, forward);
 
         // Project edge endpoints to screen space
-        auto projectToScreen = [&](const Vector3& point) -> Vector3 {
+        auto projectToScreen = [&](const Vector3 &point) -> Vector3
+        {
             Vector3 toPoint = point - cameraPos;
             float z = Vector3::dot(toPoint, forward);
-            if (z <= 0.001f) return Vector3(0, 0, -1); // Behind camera
+            if (z <= 0.001f)
+                return Vector3(0, 0, -1); // Behind camera
 
             float x = Vector3::dot(toPoint, right);
             float y = Vector3::dot(toPoint, up);
@@ -283,7 +286,8 @@ namespace RayIntersection
         Vector3 screenEnd = projectToScreen(edgeEnd);
 
         // Check if both points are behind camera
-        if (screenStart.z < 0 && screenEnd.z < 0) {
+        if (screenStart.z < 0 && screenEnd.z < 0)
+        {
             result.hit = false;
             return result;
         }
@@ -301,15 +305,19 @@ namespace RayIntersection
         Vector3 edgeDir2D = Vector3(screenEnd.x - screenStart.x, screenEnd.y - screenStart.y, 0);
         float edgeLength2D = edgeDir2D.length();
 
-        if (edgeLength2D < 1e-6f) {
+        if (edgeLength2D < 1e-6f)
+        {
             // Degenerate edge - treat as point
             float distToStart = Vector3(rayScreenX - screenStart.x, rayScreenY - screenStart.y, 0).length();
-            if (distToStart <= threshold) {
+            if (distToStart <= threshold)
+            {
                 result.hit = true;
                 result.distance = screenStart.z;
                 result.point = edgeStart;
                 result.edgeParameter = 0.0f;
-            } else {
+            }
+            else
+            {
                 result.hit = false;
             }
             result.edgeIndex = edgeIndex;
@@ -326,8 +334,7 @@ namespace RayIntersection
         Vector3 closestPoint2D = Vector3(
             screenStart.x + t * (screenEnd.x - screenStart.x),
             screenStart.y + t * (screenEnd.y - screenStart.y),
-            0
-        );
+            0);
 
         // Distance in 2D screen space
         float screenDistance = Vector3(rayScreenX - closestPoint2D.x, rayScreenY - closestPoint2D.y, 0).length();
@@ -345,20 +352,23 @@ namespace RayIntersection
         float rayT = Vector3::dot(toPoint, ray.direction);
         result.distance = std::max(rayT, 0.0f); // Ensure non-negative
 
-        if (screenDistance <= threshold) {
+        if (screenDistance <= threshold)
+        {
             result.hit = true;
             // Distance correction disabled to prevent edges floating above faces
-        } else {
+        }
+        else
+        {
             result.hit = false;
         }
-
 
         return result;
     }
 
-    VertexHit intersectVertexScreenSpace(const Ray& ray, const Vector3& vertex, float threshold, int vertexIndex,
-                                        const Vector3& cameraPos, const Vector3& cameraTarget, const Vector3& cameraUp,
-                                        float fov, float aspectRatio) {
+    VertexHit intersectVertexScreenSpace(const Ray &ray, const Vector3 &vertex, float threshold, int vertexIndex,
+                                         const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUp,
+                                         float fov, float aspectRatio)
+    {
         VertexHit result;
 
         // Calculate camera coordinate system
@@ -369,7 +379,8 @@ namespace RayIntersection
         // Project vertex to screen space
         Vector3 toVertex = vertex - cameraPos;
         float z = Vector3::dot(toVertex, forward);
-        if (z <= 0.001f) {
+        if (z <= 0.001f)
+        {
             result.hit = false; // Behind camera
             return result;
         }
@@ -402,18 +413,22 @@ namespace RayIntersection
         float rayT = Vector3::dot(toPoint, ray.direction);
         result.distance = std::max(rayT, 0.0f); // Ensure non-negative
 
-        if (screenDistance <= threshold) {
+        if (screenDistance <= threshold)
+        {
             result.hit = true;
-        } else {
+        }
+        else
+        {
             result.hit = false;
         }
 
         return result;
     }
 
-    LineHit intersectLineScreenSpace(const Ray& ray, const Line& line, float threshold, int lineIndex,
-                                    const Vector3& cameraPos, const Vector3& cameraTarget, const Vector3& cameraUp,
-                                    float fov, float aspectRatio) {
+    LineHit intersectLineScreenSpace(const Ray &ray, const Line &line, float threshold, int lineIndex,
+                                     const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUp,
+                                     float fov, float aspectRatio)
+    {
         LineHit result;
 
         // Calculate camera coordinate system
@@ -422,10 +437,12 @@ namespace RayIntersection
         Vector3 up = Vector3::cross(right, forward);
 
         // Project line endpoints to screen space
-        auto projectToScreen = [&](const Vector3& point) -> Vector3 {
+        auto projectToScreen = [&](const Vector3 &point) -> Vector3
+        {
             Vector3 toPoint = point - cameraPos;
             float z = Vector3::dot(toPoint, forward);
-            if (z <= 0.001f) return Vector3(0, 0, -1); // Behind camera
+            if (z <= 0.001f)
+                return Vector3(0, 0, -1); // Behind camera
 
             float x = Vector3::dot(toPoint, right);
             float y = Vector3::dot(toPoint, up);
@@ -441,7 +458,8 @@ namespace RayIntersection
         Vector3 screenEnd = projectToScreen(line.end);
 
         // Check if both points are behind camera
-        if (screenStart.z < 0 && screenEnd.z < 0) {
+        if (screenStart.z < 0 && screenEnd.z < 0)
+        {
             result.hit = false;
             return result;
         }
@@ -459,10 +477,12 @@ namespace RayIntersection
         Vector3 lineDir2D = Vector3(screenEnd.x - screenStart.x, screenEnd.y - screenStart.y, 0);
         float lineLength2D = lineDir2D.length();
 
-        if (lineLength2D < 1e-6f) {
+        if (lineLength2D < 1e-6f)
+        {
             // Degenerate line - treat as point
             float distToStart = Vector3(rayScreenX - screenStart.x, rayScreenY - screenStart.y, 0).length();
-            if (distToStart <= threshold * line.thickness) {
+            if (distToStart <= threshold * line.thickness)
+            {
                 result.hit = true;
                 // Calculate ray parameter for proper depth sorting
                 Vector3 toPoint = line.start - ray.origin;
@@ -470,7 +490,9 @@ namespace RayIntersection
                 result.distance = std::max(rayT, 0.0f);
                 result.point = line.start;
                 result.lineParameter = 0.0f;
-            } else {
+            }
+            else
+            {
                 result.hit = false;
             }
             result.lineIndex = lineIndex;
@@ -487,8 +509,7 @@ namespace RayIntersection
         Vector3 closestPoint2D = Vector3(
             screenStart.x + t * (screenEnd.x - screenStart.x),
             screenStart.y + t * (screenEnd.y - screenStart.y),
-            0
-        );
+            0);
 
         // Distance in 2D screen space
         float screenDistance = Vector3(rayScreenX - closestPoint2D.x, rayScreenY - closestPoint2D.y, 0).length();
@@ -506,10 +527,13 @@ namespace RayIntersection
         float rayT = Vector3::dot(toPoint, ray.direction);
         result.distance = std::max(rayT, 0.0f); // Ensure non-negative
 
-        if (screenDistance <= threshold * line.thickness) {
+        if (screenDistance <= threshold * line.thickness)
+        {
             result.hit = true;
             // Distance correction disabled to prevent lines floating above faces
-        } else {
+        }
+        else
+        {
             result.hit = false;
         }
 
@@ -563,10 +587,20 @@ namespace RayIntersection
             const Vector3 &v1 = vertices[face.v2].position;
             const Vector3 &v2 = vertices[face.v3].position;
 
+            // Skip faces that contain the target vertex (allow selection of vertices on face edges)
+            bool containsTargetVertex = false;
+            if ((v0 - vertex).length() < 0.001f || (v1 - vertex).length() < 0.001f || (v2 - vertex).length() < 0.001f)
+            {
+                containsTargetVertex = true;
+            }
+            if (containsTargetVertex)
+                continue;
+
             TriangleHit hit = intersectTriangle(visibilityRay, v0, v1, v2);
 
             // If ray hits a face closer than the target vertex, it's occluded
-            if (hit.hit && hit.distance < (targetDistance - 0.001f))
+            // Use larger tolerance to allow selection of vertices near face edges
+            if (hit.hit && hit.distance < (targetDistance - 0.05f))
             {
                 return false;
             }

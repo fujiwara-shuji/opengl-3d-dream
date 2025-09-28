@@ -18,13 +18,23 @@ struct Triangle {
 };
 
 struct RenderConfig {
-    // Selection thresholds
-    float vertexThreshold = 0.01f;     // Distance threshold for vertex selection
-    float edgeThreshold = 0.005f;      // Distance threshold for edge selection
-    float lineThickness = 0.01f;       // Thickness multiplier for coordinate axes
+    // Visual display thresholds (for rendering appearance)
+    float vertexDisplayRadius = 0.02f;   // Visual radius of vertices when rendered
+    float edgeDisplayThickness = 0.01f;  // Visual thickness of edges when rendered
+    float lineThickness = 0.01f;        // Thickness multiplier for coordinate axes
+
+    // Selection thresholds (for mouse interaction)
+    float vertexSelectionThreshold = 0.05f;  // Click range for vertex selection
+    float edgeSelectionThreshold = 0.02f;    // Click range for edge selection
 
     // Distance epsilon for avoiding self-intersection
     float rayEpsilon = 0.001f;
+
+    // Display settings
+    bool showVertices = true;          // Show/hide vertices
+    bool showEdges = true;             // Show/hide model edges
+    bool showFaces = true;             // Show/hide faces
+    bool showCoordinateAxes = true;    // Show/hide coordinate axes
 
     // Default constructor
     RenderConfig() = default;
@@ -87,9 +97,31 @@ public:
     // Configuration access
     RenderConfig& getRenderConfig() { return config; }
     const RenderConfig& getRenderConfig() const { return config; }
-    void setVertexThreshold(float threshold) { config.vertexThreshold = threshold; }
-    void setEdgeThreshold(float threshold) { config.edgeThreshold = threshold; }
+
+    // Visual display settings
+    void setVertexDisplayRadius(float radius) { config.vertexDisplayRadius = radius; }
+    void setEdgeDisplayThickness(float thickness) { config.edgeDisplayThickness = thickness; }
     void setLineThickness(float thickness) { config.lineThickness = thickness; }
+
+    // Selection settings
+    void setVertexSelectionThreshold(float threshold) { config.vertexSelectionThreshold = threshold; }
+    void setEdgeSelectionThreshold(float threshold) { config.edgeSelectionThreshold = threshold; }
+
+    // Getters
+    float getVertexDisplayRadius() const { return config.vertexDisplayRadius; }
+    float getEdgeDisplayThickness() const { return config.edgeDisplayThickness; }
+    float getVertexSelectionThreshold() const { return config.vertexSelectionThreshold; }
+    float getEdgeSelectionThreshold() const { return config.edgeSelectionThreshold; }
+
+    // Display settings control
+    void setShowVertices(bool show) { config.showVertices = show; }
+    void setShowEdges(bool show) { config.showEdges = show; }
+    void setShowFaces(bool show) { config.showFaces = show; }
+    void setShowCoordinateAxes(bool show) { config.showCoordinateAxes = show; }
+    bool getShowVertices() const { return config.showVertices; }
+    bool getShowEdges() const { return config.showEdges; }
+    bool getShowFaces() const { return config.showFaces; }
+    bool getShowCoordinateAxes() const { return config.showCoordinateAxes; }
 
     // Debug
     void saveAsText(const std::string& filename) const;
