@@ -206,10 +206,10 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray) const
     // Test ray against vertices first (highest priority)
     for (size_t i = 0; i < vertices.size(); ++i)
     {
-        VertexHit vertexHit = RayIntersection::intersectVertexScreenSpace(ray, vertices[i], 0.02f, static_cast<int>(i),
-                                                                         cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
+        VertexHit vertexHit = RayIntersection::intersectVertexScreenSpace(ray, vertices[i], config.vertexThreshold, static_cast<int>(i),
+                                                                          cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
 
-        if (vertexHit.hit && vertexHit.distance < closestDistance && vertexHit.distance > 0.001f)
+        if (vertexHit.hit && vertexHit.distance < closestDistance && vertexHit.distance > config.rayEpsilon)
         {
             closestDistance = vertexHit.distance;
             hitColor = Vector3(1.0f, 1.0f, 1.0f); // White for vertices
@@ -221,12 +221,10 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray) const
     for (size_t i = 0; i < edges.size(); ++i)
     {
         const Line &edge = edges[i];
-        const float EDGE_THRESHOLD = 0.01f;
-
-        EdgeHit edgeHit = RayIntersection::intersectEdgeScreenSpace(ray, edge.start, edge.end, EDGE_THRESHOLD, static_cast<int>(i),
+        EdgeHit edgeHit = RayIntersection::intersectEdgeScreenSpace(ray, edge.start, edge.end, config.edgeThreshold, static_cast<int>(i),
                                                                     cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
 
-        if (edgeHit.hit && edgeHit.distance < closestDistance && edgeHit.distance > 0.001f)
+        if (edgeHit.hit && edgeHit.distance < closestDistance && edgeHit.distance > config.rayEpsilon)
         {
             closestDistance = edgeHit.distance;
             hitColor = Vector3(0.7f, 0.7f, 0.7f); // Light gray for edges
@@ -238,10 +236,10 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray) const
     for (size_t i = 0; i < lines.size(); ++i)
     {
         const Line &line = lines[i];
-        LineHit lineHit = RayIntersection::intersectLineScreenSpace(ray, line, 0.02f, static_cast<int>(i),
-                                                                   cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
+        LineHit lineHit = RayIntersection::intersectLineScreenSpace(ray, line, config.lineThickness, static_cast<int>(i),
+                                                                    cameraPos, cameraTarget, cameraUp, fov, aspectRatio);
 
-        if (lineHit.hit && lineHit.distance < closestDistance && lineHit.distance > 0.001f)
+        if (lineHit.hit && lineHit.distance < closestDistance && lineHit.distance > config.rayEpsilon)
         {
             closestDistance = lineHit.distance;
             hitColor = line.color;
@@ -255,7 +253,7 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray) const
     {
         TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
 
-        if (hit.hit && hit.distance < closestDistance && hit.distance > 0.001f)
+        if (hit.hit && hit.distance < closestDistance && hit.distance > config.rayEpsilon)
         {
             closestTriangleHit = hit;
             closestDistance = hit.distance;

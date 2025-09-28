@@ -17,6 +17,19 @@ struct Triangle {
         : v0(v0), v1(v1), v2(v2), color(color) {}
 };
 
+struct RenderConfig {
+    // Selection thresholds
+    float vertexThreshold = 0.01f;     // Distance threshold for vertex selection
+    float edgeThreshold = 0.005f;      // Distance threshold for edge selection
+    float lineThickness = 0.01f;       // Thickness multiplier for coordinate axes
+
+    // Distance epsilon for avoiding self-intersection
+    float rayEpsilon = 0.001f;
+
+    // Default constructor
+    RenderConfig() = default;
+};
+
 class SoftwareRenderer : public IRenderer {
 private:
     int width = 640;
@@ -33,6 +46,9 @@ private:
     Vector3 cameraUp = Vector3(0, 0, 1);
     float fov = 45.0f * 3.14159f / 180.0f; // 45 degrees in radians
     float aspectRatio = 4.0f / 3.0f;
+
+    // Render configuration
+    RenderConfig config;
 
 public:
     SoftwareRenderer() = default;
@@ -67,6 +83,13 @@ public:
     // Camera control
     void setCamera(const Vector3& pos, const Vector3& target, const Vector3& up);
     void setCameraFOV(float fovDegrees);
+
+    // Configuration access
+    RenderConfig& getRenderConfig() { return config; }
+    const RenderConfig& getRenderConfig() const { return config; }
+    void setVertexThreshold(float threshold) { config.vertexThreshold = threshold; }
+    void setEdgeThreshold(float threshold) { config.edgeThreshold = threshold; }
+    void setLineThickness(float thickness) { config.lineThickness = thickness; }
 
     // Debug
     void saveAsText(const std::string& filename) const;

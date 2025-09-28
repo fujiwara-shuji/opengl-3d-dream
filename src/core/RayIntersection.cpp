@@ -272,9 +272,9 @@ namespace RayIntersection
             float x = Vector3::dot(toPoint, right);
             float y = Vector3::dot(toPoint, up);
 
-            float tanHalfFov = std::tan(fov * 0.5f);
-            float screenX = x / (z * tanHalfFov * aspectRatio);
-            float screenY = y / (z * tanHalfFov);
+            // Direct projection onto screen plane at z=1 (no FOV correction)
+            float screenX = x / z;
+            float screenY = y / z;
 
             return Vector3(screenX, screenY, z);
         };
@@ -288,14 +288,14 @@ namespace RayIntersection
             return result;
         }
 
-        // Convert ray to screen coordinates
+        // Convert ray to screen coordinates (also without FOV correction)
         Vector3 rayToScreen = ray.direction;
         Vector3 rayRelative = rayToScreen - Vector3::dot(rayToScreen, forward) * forward;
         float rayX = Vector3::dot(rayRelative, right);
         float rayY = Vector3::dot(rayRelative, up);
-        float tanHalfFov = std::tan(fov * 0.5f);
-        float rayScreenX = rayX / (tanHalfFov * aspectRatio);
-        float rayScreenY = rayY / tanHalfFov;
+        float rayZ = Vector3::dot(rayToScreen, forward);
+        float rayScreenX = rayX / rayZ;
+        float rayScreenY = rayY / rayZ;
 
         // Point-to-line distance in 2D screen space
         Vector3 edgeDir2D = Vector3(screenEnd.x - screenStart.x, screenEnd.y - screenStart.y, 0);
@@ -336,20 +336,18 @@ namespace RayIntersection
         result.edgeIndex = edgeIndex;
         result.edgeParameter = t;
 
-        // Interpolate 3D position and calculate camera distance
+        // Interpolate 3D position and calculate ray parameter for proper depth sorting
         Vector3 worldPoint = edgeStart + (edgeEnd - edgeStart) * t;
         result.point = worldPoint;
-        result.distance = (worldPoint - cameraPos).length();
+
+        // Calculate ray parameter t (distance along ray from origin) to match face rendering
+        Vector3 toPoint = worldPoint - ray.origin;
+        float rayT = Vector3::dot(toPoint, ray.direction);
+        result.distance = std::max(rayT, 0.0f); // Ensure non-negative
 
         if (screenDistance <= threshold) {
             result.hit = true;
-
-            // Add cylindrical correction using linear function for speed
-            float normalizedDistance = screenDistance / threshold; // 0.0 to 1.0
-            float linearCorrection = (1.0f - normalizedDistance) * threshold * 0.2f;
-
-            // Apply correction to the distance (subtract to bring closer)
-            result.distance = result.distance - linearCorrection;
+            // Distance correction disabled to prevent edges floating above faces
         } else {
             result.hit = false;
         }
@@ -379,17 +377,18 @@ namespace RayIntersection
         float x = Vector3::dot(toVertex, right);
         float y = Vector3::dot(toVertex, up);
 
-        float tanHalfFov = std::tan(fov * 0.5f);
-        float screenX = x / (z * tanHalfFov * aspectRatio);
-        float screenY = y / (z * tanHalfFov);
+        // Direct projection onto screen plane at z=1 (no FOV correction)
+        float screenX = x / z;
+        float screenY = y / z;
 
-        // Convert ray to screen coordinates
+        // Convert ray to screen coordinates (also without FOV correction)
         Vector3 rayToScreen = ray.direction;
         Vector3 rayRelative = rayToScreen - Vector3::dot(rayToScreen, forward) * forward;
         float rayX = Vector3::dot(rayRelative, right);
         float rayY = Vector3::dot(rayRelative, up);
-        float rayScreenX = rayX / (tanHalfFov * aspectRatio);
-        float rayScreenY = rayY / tanHalfFov;
+        float rayZ = Vector3::dot(rayToScreen, forward);
+        float rayScreenX = rayX / rayZ;
+        float rayScreenY = rayY / rayZ;
 
         // Distance in 2D screen space
         float screenDistance = Vector3(rayScreenX - screenX, rayScreenY - screenY, 0).length();
@@ -397,7 +396,11 @@ namespace RayIntersection
         // Set result values
         result.vertexIndex = vertexIndex;
         result.point = vertex;
-        result.distance = z; // Camera distance
+
+        // Calculate ray parameter t (distance along ray from origin) to match face rendering
+        Vector3 toPoint = vertex - ray.origin;
+        float rayT = Vector3::dot(toPoint, ray.direction);
+        result.distance = std::max(rayT, 0.0f); // Ensure non-negative
 
         if (screenDistance <= threshold) {
             result.hit = true;
@@ -427,9 +430,9 @@ namespace RayIntersection
             float x = Vector3::dot(toPoint, right);
             float y = Vector3::dot(toPoint, up);
 
-            float tanHalfFov = std::tan(fov * 0.5f);
-            float screenX = x / (z * tanHalfFov * aspectRatio);
-            float screenY = y / (z * tanHalfFov);
+            // Direct projection onto screen plane at z=1 (no FOV correction)
+            float screenX = x / z;
+            float screenY = y / z;
 
             return Vector3(screenX, screenY, z);
         };
@@ -443,14 +446,14 @@ namespace RayIntersection
             return result;
         }
 
-        // Convert ray to screen coordinates
+        // Convert ray to screen coordinates (also without FOV correction)
         Vector3 rayToScreen = ray.direction;
         Vector3 rayRelative = rayToScreen - Vector3::dot(rayToScreen, forward) * forward;
         float rayX = Vector3::dot(rayRelative, right);
         float rayY = Vector3::dot(rayRelative, up);
-        float tanHalfFov = std::tan(fov * 0.5f);
-        float rayScreenX = rayX / (tanHalfFov * aspectRatio);
-        float rayScreenY = rayY / tanHalfFov;
+        float rayZ = Vector3::dot(rayToScreen, forward);
+        float rayScreenX = rayX / rayZ;
+        float rayScreenY = rayY / rayZ;
 
         // Point-to-line distance in 2D screen space
         Vector3 lineDir2D = Vector3(screenEnd.x - screenStart.x, screenEnd.y - screenStart.y, 0);
@@ -461,7 +464,10 @@ namespace RayIntersection
             float distToStart = Vector3(rayScreenX - screenStart.x, rayScreenY - screenStart.y, 0).length();
             if (distToStart <= threshold * line.thickness) {
                 result.hit = true;
-                result.distance = screenStart.z;
+                // Calculate ray parameter for proper depth sorting
+                Vector3 toPoint = line.start - ray.origin;
+                float rayT = Vector3::dot(toPoint, ray.direction);
+                result.distance = std::max(rayT, 0.0f);
                 result.point = line.start;
                 result.lineParameter = 0.0f;
             } else {
@@ -491,21 +497,18 @@ namespace RayIntersection
         result.lineIndex = lineIndex;
         result.lineParameter = t;
 
-        // Interpolate 3D position and calculate camera distance
+        // Interpolate 3D position and calculate ray parameter for proper depth sorting
         Vector3 worldPoint = line.start + (line.end - line.start) * t;
         result.point = worldPoint;
-        result.distance = (worldPoint - cameraPos).length();
+
+        // Calculate ray parameter t (distance along ray from origin) to match face rendering
+        Vector3 toPoint = worldPoint - ray.origin;
+        float rayT = Vector3::dot(toPoint, ray.direction);
+        result.distance = std::max(rayT, 0.0f); // Ensure non-negative
 
         if (screenDistance <= threshold * line.thickness) {
             result.hit = true;
-
-            // Add cylindrical correction using linear function for speed
-            float effectiveThreshold = threshold * line.thickness;
-            float normalizedDistance = screenDistance / effectiveThreshold; // 0.0 to 1.0
-            float linearCorrection = (1.0f - normalizedDistance) * effectiveThreshold * 0.2f;
-
-            // Apply correction to the distance (subtract to bring closer)
-            result.distance = result.distance - linearCorrection;
+            // Distance correction disabled to prevent lines floating above faces
         } else {
             result.hit = false;
         }

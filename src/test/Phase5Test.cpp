@@ -114,6 +114,12 @@ public:
         model.addVertex(-1.0f, 1.0f, 0.0f);  // 3: Top-left
         model.addVertex(0.0f, 0.0f, 2.0f);   // 4: Apex
 
+        // Test rectangle at z=-0.5
+        model.addVertex(0.0f, 0.0f, -0.5f);  // 5: Rectangle bottom-left
+        model.addVertex(0.5f, 0.0f, -0.5f);  // 6: Rectangle bottom-right
+        model.addVertex(0.5f, 10.0f, -0.5f); // 7: Rectangle top-right
+        model.addVertex(0.0f, 10.0f, -0.5f); // 8: Rectangle top-left
+
         // Base faces (two triangles for the square base)
         model.addFace(0, 1, 2); // Bottom triangle 1
         model.addFace(0, 2, 3); // Bottom triangle 2
@@ -123,6 +129,10 @@ public:
         model.addFace(1, 4, 2); // Side 2
         model.addFace(2, 4, 3); // Side 3
         model.addFace(3, 4, 0); // Side 4
+
+        // Test rectangle faces (two triangles)
+        model.addFace(5, 6, 7); // Rectangle triangle 1
+        model.addFace(5, 7, 8); // Rectangle triangle 2
 
         // Edges (manual addition for testing)
         // Base edges
@@ -135,8 +145,13 @@ public:
         model.addEdge(1, 4);
         model.addEdge(2, 4);
         model.addEdge(3, 4);
+        // Rectangle edges
+        model.addEdge(5, 6);
+        model.addEdge(6, 7);
+        model.addEdge(7, 8);
+        model.addEdge(8, 5);
 
-        Utils::logInfo("Test pyramid created:");
+        Utils::logInfo("Test pyramid with rectangle created:");
         Utils::logInfo("  Vertices: " + std::to_string(model.getVertexCount()));
         Utils::logInfo("  Faces: " + std::to_string(model.getFaceCount()));
         Utils::logInfo("  Edges: " + std::to_string(model.getEdgeCount()));
@@ -166,6 +181,11 @@ public:
             else if (face.v1 == 0 && face.v2 == 2 && face.v3 == 3)
             {
                 color = Vector3(0.8f, 0.3f, 0.3f); // Red base
+            }
+            else if ((face.v1 == 5 && face.v2 == 6 && face.v3 == 7) ||
+                     (face.v1 == 5 && face.v2 == 7 && face.v3 == 8))
+            {
+                color = Vector3(0.3f, 0.4f, 0.8f); // Blue rectangle
             }
             else
             {
@@ -265,15 +285,6 @@ public:
             showSelectionInfo();
         }
 
-        // T key: Cycle through threshold values
-        if (inputHandler->isKeyPressed(GLFW_KEY_T))
-        {
-            static float thresholds[] = {0.05f, 0.1f, 0.2f, 0.5f};
-            static int currentThreshold = 1; // Start with 0.1f
-            currentThreshold = (currentThreshold + 1) % 4;
-            inputHandler->setSelectionThreshold(thresholds[currentThreshold]);
-            Utils::logInfo("Selection threshold set to: " + std::to_string(thresholds[currentThreshold]));
-        }
 
         // A key: Toggle coordinate axes
         if (inputHandler->isKeyPressed(GLFW_KEY_A))
@@ -423,7 +434,6 @@ public:
         std::cout << "C KEY              : Clear selection\n";
         std::cout << "I KEY              : Print model info\n";
         std::cout << "S KEY              : Show selection info\n";
-        std::cout << "T KEY              : Cycle selection threshold\n";
         std::cout << "A KEY              : Toggle coordinate axes\n";
         std::cout << "+ KEY              : Increase axis length\n";
         std::cout << "- KEY              : Decrease axis length\n";
