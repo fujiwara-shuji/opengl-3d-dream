@@ -41,19 +41,13 @@ void Camera::setYaw(float newYaw) {
 }
 
 void Camera::orbit(float deltaPitch, float deltaYaw) {
-    Utils::logInfo("CAMERA ORBIT CALLED: deltaPitch=" + std::to_string(deltaPitch) +
-                   " deltaYaw=" + std::to_string(deltaYaw));
     pitch = clampPitch(pitch + deltaPitch);
     yaw = normalizeYaw(yaw + deltaYaw);
     invalidateView();
 }
 
 void Camera::zoom(float factor) {
-    float oldDistance = distance;
     distance = std::max(0.1f, distance * factor);
-    Utils::logInfo("CAMERA ZOOM CALLED: factor=" + std::to_string(factor) +
-                   " oldDist=" + std::to_string(oldDistance) +
-                   " newDist=" + std::to_string(distance));
     invalidateView();
 }
 

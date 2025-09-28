@@ -22,7 +22,7 @@ InputHandler::InputHandler(GLFWwindow* window, Camera* camera, Model* model)
     , mouseDeltaX(0.0)
     , mouseDeltaY(0.0)
     , firstMouse(true)
-    , orbitSensitivity(0.001f)
+    , orbitSensitivity(0.002f)
     , zoomSensitivity(0.1f) {
 
     std::memset(mouseButtons, false, sizeof(mouseButtons));
@@ -105,7 +105,10 @@ void InputHandler::handleCameraOrbit() {
     getMouseDelta(deltaX, deltaY);
 
     if (deltaX != 0.0 || deltaY != 0.0) {
-        camera->orbit(-deltaY * orbitSensitivity, -deltaX * orbitSensitivity);
+        float deltaPitch = deltaY * orbitSensitivity;
+        float deltaYaw = -deltaX * orbitSensitivity;
+
+        camera->orbit(deltaPitch, deltaYaw);
     }
 }
 
@@ -149,7 +152,12 @@ void InputHandler::mouseButtonCallback(GLFWwindow* window, int button, int actio
         if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
             if (action == GLFW_PRESS) {
                 handler->setMode(InputMode::CAMERA_ORBIT);
-                handler->firstMouse = true;  // Reset mouse tracking
+                // Initialize mouse position immediately to prevent jump
+                double mouseX, mouseY;
+                glfwGetCursorPos(window, &mouseX, &mouseY);
+                handler->lastMouseX = mouseX;
+                handler->lastMouseY = mouseY;
+                handler->firstMouse = true;  // Set to true to ignore first movement
             } else if (action == GLFW_RELEASE) {
                 handler->setMode(InputMode::NORMAL);
             }
@@ -189,18 +197,12 @@ void InputHandler::cursorPosCallback(GLFWwindow* window, double xpos, double ypo
     InputHandler* handler = getInstance(window);
     if (!handler) return;
 
-    // Only log the first mouse movement to confirm it's working
-    if (handler->firstMouse) {
-        Utils::logInfo("FIRST CURSOR EVENT: pos=" + std::to_string(xpos) + "," + std::to_string(ypos));
-    }
-
     // Handle first mouse movement - just initialize position, no camera movement
     if (handler->firstMouse) {
         handler->lastMouseX = xpos;
         handler->lastMouseY = ypos;
         handler->firstMouse = false;
-        Utils::logInfo("FIRST MOUSE - Position initialized, no camera processing");
-        return; // CRITICAL: Exit immediately, no camera processing
+        return; // Exit immediately, no camera processing
     }
 
     // Calculate deltas before updating last position
@@ -211,15 +213,23 @@ void InputHandler::cursorPosCallback(GLFWwindow* window, double xpos, double ypo
     handler->lastMouseX = xpos;
     handler->lastMouseY = ypos;
 
-    // ONLY process camera movement if explicitly in orbit mode
+    // ONLY process camera movement if explicitly in orbit mode AND not ignoring movement
     if (handler->currentMode == InputMode::CAMERA_ORBIT) {
-        Utils::logInfo("CURSOR DELTA: " + std::to_string(deltaX) + "," + std::to_string(deltaY));
         // Store deltas for processing
         handler->mouseDeltaX = deltaX;
         handler->mouseDeltaY = deltaY;
 
-        // Only handle camera orbit if there's actual movement
-        if (deltaX != 0.0 || deltaY != 0.0) {
+        // Check for abnormally large movements (probably caused by cursor mode change)
+        bool isAbnormalMovement = (abs(deltaX) > 100.0 || abs(deltaY) > 100.0);
+        // Check for meaningful movement (ignore tiny jitter)
+        bool isMeaningfulMovement = (abs(deltaX) >= 0.5 || abs(deltaY) >= 0.5);
+
+        if (isAbnormalMovement) {
+            return; // Ignore this movement
+        }
+
+        // Only handle camera orbit if there's meaningful movement
+        if (isMeaningfulMovement) {
             handler->handleCameraOrbit();
         }
     }
@@ -228,9 +238,6 @@ void InputHandler::cursorPosCallback(GLFWwindow* window, double xpos, double ypo
 void InputHandler::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     InputHandler* handler = getInstance(window);
     if (!handler) return;
-
-    Utils::logInfo("SCROLL CALLBACK: xoffset=" + std::to_string(xoffset) +
-                   " yoffset=" + std::to_string(yoffset));
 
     handler->handleCameraZoom(yoffset);
 }
