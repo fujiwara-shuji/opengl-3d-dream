@@ -2,6 +2,7 @@
 
 #include "../math/Vector3.h"
 #include <iostream>
+#include <limits>
 
 struct Ray {
     Vector3 origin;
@@ -55,7 +56,54 @@ struct TriangleHit {
         : hit(hit), distance(distance), point(point), normal(normal), isFrontFace(isFrontFace) {}
 };
 
-// Ray-Triangle intersection functions
+// Vertex intersection result
+struct VertexHit {
+    bool hit = false;
+    float distance = 0.0f;
+    Vector3 point;
+    int vertexIndex = -1;
+
+    VertexHit() = default;
+    VertexHit(bool hit, float distance, const Vector3& point, int vertexIndex)
+        : hit(hit), distance(distance), point(point), vertexIndex(vertexIndex) {}
+};
+
+// Edge intersection result
+struct EdgeHit {
+    bool hit = false;
+    float distance = 0.0f;
+    Vector3 point;
+    int edgeIndex = -1;
+    float edgeParameter = 0.0f;  // Position along edge (0.0 to 1.0)
+
+    EdgeHit() = default;
+    EdgeHit(bool hit, float distance, const Vector3& point, int edgeIndex, float edgeParameter)
+        : hit(hit), distance(distance), point(point), edgeIndex(edgeIndex), edgeParameter(edgeParameter) {}
+};
+
+// Combined raycast result for Model intersection
+enum class RaycastResultType {
+    NONE,
+    VERTEX,
+    EDGE,
+    FACE
+};
+
+struct RaycastResult {
+    RaycastResultType type = RaycastResultType::NONE;
+    float distance = std::numeric_limits<float>::max();
+    Vector3 point;
+    int elementIndex = -1;  // Index of vertex, edge, or face
+
+    // Type-specific data
+    TriangleHit triangleHit;
+    VertexHit vertexHit;
+    EdgeHit edgeHit;
+
+    RaycastResult() = default;
+};
+
+// Ray intersection functions
 namespace RayIntersection {
     // Ray-triangle intersection (using the algorithm from CLAUDE.md)
     TriangleHit intersectTriangle(const Ray& ray, const Vector3& v0, const Vector3& v1, const Vector3& v2);
@@ -65,4 +113,22 @@ namespace RayIntersection {
 
     // Ray-plane intersection
     bool intersectPlane(const Ray& ray, const Vector3& planePoint, const Vector3& planeNormal, float& distance, Vector3& hitPoint);
+
+    // Ray-vertex intersection (distance check with threshold)
+    VertexHit intersectVertex(const Ray& ray, const Vector3& vertex, float threshold, int vertexIndex);
+
+    // Ray-edge intersection (closest approach distance check)
+    EdgeHit intersectEdge(const Ray& ray, const Vector3& edgeStart, const Vector3& edgeEnd, float threshold, int edgeIndex);
+
+    // Calculate distance between ray and point
+    float rayPointDistance(const Ray& ray, const Vector3& point, float& rayParameter);
+
+    // Calculate distance between ray and line segment (from CLAUDE.md algorithm)
+    float rayEdgeDistance(const Ray& ray, const Vector3& edgeStart, const Vector3& edgeEnd, float& rayParameter, float& edgeParameter);
+
+    // Visibility checking for selection (occlusion test)
+    bool isVertexVisible(const Vector3& cameraPos, const Vector3& vertex, const class Model& model);
+
+    // Combined model intersection (finds closest hit among vertices, edges, faces)
+    RaycastResult findClosestIntersection(const Ray& ray, const class Model& model, float vertexThreshold, float edgeThreshold);
 }
