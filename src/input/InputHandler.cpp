@@ -3,6 +3,11 @@
 #include "../utils/Utils.h"
 #include <GLFW/glfw3.h>
 #include <cstring>
+#include <algorithm>
+
+// Static member definitions
+void* InputHandler::externalUserPointer = nullptr;
+void (*InputHandler::externalResizeCallback)(void* userPtr, int width, int height) = nullptr;
 
 InputHandler::InputHandler(GLFWwindow* window, Camera* camera)
     : window(window)
@@ -22,8 +27,7 @@ InputHandler::InputHandler(GLFWwindow* window, Camera* camera)
     // Store this instance in GLFW window user pointer
     glfwSetWindowUserPointer(window, this);
 
-    // Get initial mouse position
-    glfwGetCursorPos(window, &lastMouseX, &lastMouseY);
+    // DON'T get initial mouse position here - wait for first real mouse movement
 }
 
 void InputHandler::setupCallbacks() {
@@ -31,22 +35,22 @@ void InputHandler::setupCallbacks() {
     glfwSetCursorPosCallback(window, InputHandler::cursorPosCallback);
     glfwSetScrollCallback(window, InputHandler::scrollCallback);
     glfwSetKeyCallback(window, InputHandler::keyCallback);
+    glfwSetFramebufferSizeCallback(window, InputHandler::framebufferSizeCallback);
 
     Utils::logInfo("Input callbacks registered");
 }
 
+void InputHandler::setExternalResizeCallback(void (*callback)(void* userPtr, int width, int height), void* userPtr) {
+    externalResizeCallback = callback;
+    externalUserPointer = userPtr;
+}
+
 void InputHandler::update() {
-    // Reset mouse delta after use
-    mouseDeltaX = 0.0;
-    mouseDeltaY = 0.0;
-
-    // Handle continuous inputs
-    if (currentMode == InputMode::CAMERA_ORBIT) {
-        handleCameraOrbit();
-    }
-
-    // Handle preset view keys
+    // Handle preset view keys only
     handlePresetViews();
+
+    // DON'T call handleCameraOrbit here - it's handled in callbacks only
+    // DON'T reset mouse deltas here - they're reset in callbacks
 }
 
 void InputHandler::setMode(InputMode mode) {
@@ -104,7 +108,10 @@ void InputHandler::handleCameraOrbit() {
 void InputHandler::handleCameraZoom(double yoffset) {
     if (!camera) return;
 
+    // Clamp zoom factor to prevent distance from becoming 0 or negative
     float zoomFactor = 1.0f - (yoffset * zoomSensitivity);
+    zoomFactor = std::max(0.1f, std::min(2.0f, zoomFactor));  // Clamp between 0.1 and 2.0
+
     camera->zoom(zoomFactor);
 }
 
@@ -150,28 +157,48 @@ void InputHandler::cursorPosCallback(GLFWwindow* window, double xpos, double ypo
     InputHandler* handler = getInstance(window);
     if (!handler) return;
 
+    // Only log the first mouse movement to confirm it's working
+    if (handler->firstMouse) {
+        Utils::logInfo("FIRST CURSOR EVENT: pos=" + std::to_string(xpos) + "," + std::to_string(ypos));
+    }
+
+    // Handle first mouse movement - just initialize position, no camera movement
     if (handler->firstMouse) {
         handler->lastMouseX = xpos;
         handler->lastMouseY = ypos;
         handler->firstMouse = false;
-        return; // Early return to avoid calculating delta on first mouse movement
+        Utils::logInfo("FIRST MOUSE - Position initialized, no camera processing");
+        return; // CRITICAL: Exit immediately, no camera processing
     }
 
-    handler->mouseDeltaX = xpos - handler->lastMouseX;
-    handler->mouseDeltaY = ypos - handler->lastMouseY;
+    // Calculate deltas before updating last position
+    double deltaX = xpos - handler->lastMouseX;
+    double deltaY = ypos - handler->lastMouseY;
 
+    // Update position tracking for next frame
     handler->lastMouseX = xpos;
     handler->lastMouseY = ypos;
 
-    // Handle camera orbit in real-time
+    // ONLY process camera movement if explicitly in orbit mode
     if (handler->currentMode == InputMode::CAMERA_ORBIT) {
-        handler->handleCameraOrbit();
+        Utils::logInfo("CURSOR DELTA: " + std::to_string(deltaX) + "," + std::to_string(deltaY));
+        // Store deltas for processing
+        handler->mouseDeltaX = deltaX;
+        handler->mouseDeltaY = deltaY;
+
+        // Only handle camera orbit if there's actual movement
+        if (deltaX != 0.0 || deltaY != 0.0) {
+            handler->handleCameraOrbit();
+        }
     }
 }
 
 void InputHandler::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     InputHandler* handler = getInstance(window);
     if (!handler) return;
+
+    Utils::logInfo("SCROLL CALLBACK: xoffset=" + std::to_string(xoffset) +
+                   " yoffset=" + std::to_string(yoffset));
 
     handler->handleCameraZoom(yoffset);
 }
@@ -197,5 +224,12 @@ void InputHandler::keyCallback(GLFWwindow* window, int key, int scancode, int ac
     // Handle escape key
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+}
+
+void InputHandler::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+    // Call external resize callback if set
+    if (externalResizeCallback && externalUserPointer) {
+        externalResizeCallback(externalUserPointer, width, height);
     }
 }

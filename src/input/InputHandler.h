@@ -26,6 +26,10 @@ private:
     Camera* camera;
     InputMode currentMode;
 
+    // Resize callback support for GLFWTestApp
+    static void* externalUserPointer;
+    static void (*externalResizeCallback)(void* userPtr, int width, int height);
+
     // Mouse state
     bool mouseButtons[3];  // Left, Right, Middle
     double lastMouseX, lastMouseY;
@@ -42,6 +46,9 @@ private:
 public:
     InputHandler(GLFWwindow* window, Camera* camera);
     ~InputHandler() = default;
+
+    // Set external resize callback and user pointer
+    static void setExternalResizeCallback(void (*callback)(void* userPtr, int width, int height), void* userPtr);
 
     // Initialize GLFW callbacks
     void setupCallbacks();
@@ -71,6 +78,7 @@ public:
     static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 private:
     // Camera controls

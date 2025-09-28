@@ -40,13 +40,19 @@ void Camera::setYaw(float newYaw) {
 }
 
 void Camera::orbit(float deltaPitch, float deltaYaw) {
+    Utils::logInfo("CAMERA ORBIT CALLED: deltaPitch=" + std::to_string(deltaPitch) +
+                   " deltaYaw=" + std::to_string(deltaYaw));
     pitch = clampPitch(pitch + deltaPitch);
     yaw = normalizeYaw(yaw + deltaYaw);
     invalidateView();
 }
 
 void Camera::zoom(float factor) {
+    float oldDistance = distance;
     distance = std::max(0.1f, distance * factor);
+    Utils::logInfo("CAMERA ZOOM CALLED: factor=" + std::to_string(factor) +
+                   " oldDist=" + std::to_string(oldDistance) +
+                   " newDist=" + std::to_string(distance));
     invalidateView();
 }
 
@@ -156,7 +162,19 @@ void Camera::updatePosition() const {
     float y = -distance * cosPitch * cosYaw;  // Negative for proper orientation
     float z = distance * sinPitch;
 
-    position = target + Vector3(x, y, z);
+    Vector3 newPosition = target + Vector3(x, y, z);
+
+    // Debug: Log when camera moves unexpectedly (distance corruption or extreme values)
+    if ((newPosition - position).length() > 0.001f) {
+        if (distance < 0.1f || distance > 100.0f ||
+            pitch < -95.0f * Utils::DEG_TO_RAD || pitch > 95.0f * Utils::DEG_TO_RAD) {
+            Utils::logInfo("CAMERA CORRUPTION DETECTED: pitch=" + std::to_string(pitch * 180.0f / 3.14159f) +
+                          " yaw=" + std::to_string(yaw * 180.0f / 3.14159f) +
+                          " dist=" + std::to_string(distance));
+        }
+    }
+
+    position = newPosition;
 }
 
 void Camera::invalidateView() {

@@ -8,11 +8,12 @@
 #include <vector>
 #include <chrono>
 
-class GLFWTestApp {
+class GLFWTestApp
+{
 private:
-    GLFWwindow* window;
+    GLFWwindow *window;
     Camera camera;
-    InputHandler* inputHandler;
+    InputHandler *inputHandler;
     SoftwareRenderer renderer;
 
     int windowWidth = 800;
@@ -30,13 +31,16 @@ private:
 public:
     GLFWTestApp() : window(nullptr), inputHandler(nullptr) {}
 
-    ~GLFWTestApp() {
+    ~GLFWTestApp()
+    {
         cleanup();
     }
 
-    bool initialize() {
+    bool initialize()
+    {
         // Initialize GLFW
-        if (!glfwInit()) {
+        if (!glfwInit())
+        {
             Utils::logError("Failed to initialize GLFW");
             return false;
         }
@@ -49,7 +53,8 @@ public:
         // Create window
         window = glfwCreateWindow(windowWidth, windowHeight,
                                   "3D Model Editor - Phase 3 Test", nullptr, nullptr);
-        if (!window) {
+        if (!window)
+        {
             Utils::logError("Failed to create GLFW window");
             glfwTerminate();
             return false;
@@ -66,6 +71,7 @@ public:
 
         // Setup input handler
         inputHandler = new InputHandler(window, &camera);
+        InputHandler::setExternalResizeCallback(onResizeStatic, this);
         inputHandler->setupCallbacks();
 
         // Setup renderer
@@ -75,9 +81,7 @@ public:
         // Create test scene
         createTestScene();
 
-        // Set GLFW callbacks for window resize
-        glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-        glfwSetWindowUserPointer(window, this);
+        // Resize callback is now handled by InputHandler
 
         // Initialize pixel buffer
         pixelBuffer.resize(windowWidth * windowHeight * 3);
@@ -91,52 +95,50 @@ public:
         return true;
     }
 
-    void createTestScene() {
+    void createTestScene()
+    {
         // Create a colorful test scene with multiple triangles
 
         // Floor plane (gray)
         renderer.addTriangle(Triangle(
             Vector3(-2, -2, -1),
-            Vector3( 2, -2, -1),
-            Vector3( 2,  2, -1),
-            Vector3(0.3f, 0.3f, 0.3f)
-        ));
+            Vector3(2, -2, -1),
+            Vector3(2, 2, -1),
+            Vector3(0.3f, 0.3f, 0.3f)));
         renderer.addTriangle(Triangle(
             Vector3(-2, -2, -1),
-            Vector3( 2,  2, -1),
-            Vector3(-2,  2, -1),
-            Vector3(0.4f, 0.4f, 0.4f)
-        ));
+            Vector3(2, 2, -1),
+            Vector3(-2, 2, -1),
+            Vector3(0.4f, 0.4f, 0.4f)));
 
         // Standing triangle (red)
         renderer.addTriangle(Triangle(
             Vector3(-1, 0, -1),
-            Vector3( 1, 0, -1),
-            Vector3( 0, 0,  1),
-            Vector3(1.0f, 0.2f, 0.2f)
-        ));
+            Vector3(1, 0, -1),
+            Vector3(0, 0, 1),
+            Vector3(1.0f, 0.2f, 0.2f)));
 
         // Side triangle (green)
         renderer.addTriangle(Triangle(
             Vector3(0, -1, -1),
-            Vector3(0, -1,  1),
-            Vector3(0,  1,  0),
-            Vector3(0.2f, 1.0f, 0.2f)
-        ));
+            Vector3(0, -1, 1),
+            Vector3(0, 1, 0),
+            Vector3(0.2f, 1.0f, 0.2f)));
 
         // Angled triangle (blue)
         renderer.addTriangle(Triangle(
             Vector3(-0.5f, 0.5f, 0),
-            Vector3( 0.5f, -0.5f, 0),
-            Vector3( 0, 0, 1.5f),
-            Vector3(0.2f, 0.2f, 1.0f)
-        ));
+            Vector3(0.5f, -0.5f, 0),
+            Vector3(0, 0, 1.5f),
+            Vector3(0.2f, 0.2f, 1.0f)));
 
         Utils::logInfo("Test scene created with 5 triangles");
     }
 
-    void run() {
-        while (!glfwWindowShouldClose(window)) {
+    void run()
+    {
+        while (!glfwWindowShouldClose(window))
+        {
             updateTiming();
 
             // Poll events
@@ -159,7 +161,8 @@ public:
         }
     }
 
-    void render() {
+    void render()
+    {
         // Update renderer camera from our camera
         renderer.setCamera(camera.getPosition(), camera.getTarget(), Vector3(0, 0, 1));
 
@@ -167,11 +170,13 @@ public:
         renderer.render();
     }
 
-    void displayFrame() {
-        const auto& pixels = renderer.getPixelData();
+    void displayFrame()
+    {
+        const auto &pixels = renderer.getPixelData();
 
         // Convert float RGB to unsigned char RGB
-        for (int i = 0; i < windowWidth * windowHeight; ++i) {
+        for (int i = 0; i < windowWidth * windowHeight; ++i)
+        {
             pixelBuffer[i * 3 + 0] = static_cast<unsigned char>(pixels[i].x * 255.0f);
             pixelBuffer[i * 3 + 1] = static_cast<unsigned char>(pixels[i].y * 255.0f);
             pixelBuffer[i * 3 + 2] = static_cast<unsigned char>(pixels[i].z * 255.0f);
@@ -184,18 +189,21 @@ public:
         glDrawPixels(windowWidth, windowHeight, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer.data());
     }
 
-    void updateTiming() {
+    void updateTiming()
+    {
         auto currentTime = std::chrono::steady_clock::now();
         std::chrono::duration<float> elapsed = currentTime - lastFrameTime;
         deltaTime = elapsed.count();
         lastFrameTime = currentTime;
     }
 
-    void updateFPS() {
+    void updateFPS()
+    {
         frameCount++;
         fpsTimer += deltaTime;
 
-        if (fpsTimer >= 1.0f) {
+        if (fpsTimer >= 1.0f)
+        {
             float fps = frameCount / fpsTimer;
             std::string title = "3D Model Editor - FPS: " + std::to_string(static_cast<int>(fps));
             glfwSetWindowTitle(window, title.c_str());
@@ -205,13 +213,16 @@ public:
         }
     }
 
-    void cleanup() {
-        if (inputHandler) {
+    void cleanup()
+    {
+        if (inputHandler)
+        {
             delete inputHandler;
             inputHandler = nullptr;
         }
 
-        if (window) {
+        if (window)
+        {
             glfwDestroyWindow(window);
             window = nullptr;
         }
@@ -221,7 +232,8 @@ public:
         Utils::logInfo("GLFW Test Application cleaned up");
     }
 
-    void printControls() {
+    void printControls()
+    {
         std::cout << "\n===== CAMERA CONTROLS =====\n";
         std::cout << "Middle Mouse + Drag : Orbit camera\n";
         std::cout << "Mouse Wheel        : Zoom in/out\n";
@@ -233,15 +245,18 @@ public:
         std::cout << "===========================\n\n";
     }
 
-    // Static callback for window resize
-    static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-        GLFWTestApp* app = static_cast<GLFWTestApp*>(glfwGetWindowUserPointer(window));
-        if (app) {
+    // Static callback for window resize (called by InputHandler)
+    static void onResizeStatic(void *userPtr, int width, int height)
+    {
+        GLFWTestApp *app = static_cast<GLFWTestApp *>(userPtr);
+        if (app)
+        {
             app->onResize(width, height);
         }
     }
 
-    void onResize(int width, int height) {
+    void onResize(int width, int height)
+    {
         windowWidth = width;
         windowHeight = height;
 
@@ -261,19 +276,24 @@ public:
     }
 };
 
-int main() {
+int main()
+{
     Utils::logInfo("Starting GLFW Integration Test");
 
     GLFWTestApp app;
 
-    if (!app.initialize()) {
+    if (!app.initialize())
+    {
         Utils::logError("Failed to initialize application");
         return -1;
     }
 
-    try {
+    try
+    {
         app.run();
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception &e)
+    {
         Utils::logError("Runtime error: " + std::string(e.what()));
         return -1;
     }
