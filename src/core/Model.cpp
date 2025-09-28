@@ -1,11 +1,13 @@
 #include "Model.h"
+#include "Ray.h"
+#include "Camera.h"
 #include "../utils/Utils.h"
 #include <fstream>
 #include <sstream>
 #include <algorithm>
 #include <set>
 
-Model::Model() : isModified(false) {
+Model::Model() : isModified(false), selectedVertexIndex(-1) {
 }
 
 bool Model::loadFromFile(const std::string& filePath) {
@@ -476,4 +478,81 @@ void Model::generateEdgesFromFaces() {
     for (const auto& edgePair : edgeSet) {
         edges.emplace_back(edgePair.first, edgePair.second);
     }
+}
+
+// Selection system implementation
+void Model::setSelectedVertex(int index) {
+    if (isVertexIndexValid(index)) {
+        selectedVertexIndex = index;
+        Utils::logInfo("Selected vertex " + std::to_string(index) +
+                      " at position " + std::to_string(vertices[index].position.x) +
+                      "," + std::to_string(vertices[index].position.y) +
+                      "," + std::to_string(vertices[index].position.z));
+    } else {
+        Utils::logError("Invalid vertex index for selection: " + std::to_string(index));
+    }
+}
+
+void Model::clearSelection() {
+    if (selectedVertexIndex >= 0) {
+        Utils::logInfo("Cleared selection (was vertex " + std::to_string(selectedVertexIndex) + ")");
+        selectedVertexIndex = -1;
+    }
+}
+
+Vector3 Model::getSelectedVertexPosition() const {
+    if (hasSelection()) {
+        return vertices[selectedVertexIndex].position;
+    }
+    return Vector3(0, 0, 0);
+}
+
+bool Model::selectVertex(const Ray& ray, const Camera& camera, float baseThreshold) {
+    // Calculate dynamic threshold based on camera distance
+    float cameraDistance = camera.getDistance();
+    float dynamicThreshold = baseThreshold * cameraDistance * 0.1f;
+
+    // Find closest vertex intersection with visibility check
+    int closestVertexIndex = -1;
+    float closestDistance = std::numeric_limits<float>::max();
+
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        const Vector3& vertexPos = vertices[i].position;
+
+        // Check if vertex is visible (not occluded by faces)
+        if (!RayIntersection::isVertexVisible(camera.getPosition(), vertexPos, *this)) {
+            continue;  // Skip occluded vertices
+        }
+
+        // Check intersection with threshold
+        VertexHit hit = RayIntersection::intersectVertex(ray, vertexPos, dynamicThreshold, static_cast<int>(i));
+
+        if (hit.hit && hit.distance < closestDistance) {
+            closestDistance = hit.distance;
+            closestVertexIndex = hit.vertexIndex;
+        }
+    }
+
+    // Check if we should deselect (clicked far from any vertex)
+    if (closestVertexIndex == -1) {
+        // Calculate deselection threshold (larger than selection threshold)
+        float deselectionThreshold = dynamicThreshold * 2.0f;
+
+        // If we have a selection and clicked far from it, deselect
+        if (hasSelection()) {
+            const Vector3& selectedPos = vertices[selectedVertexIndex].position;
+            float rayParam;
+            float distToSelected = RayIntersection::rayPointDistance(ray, selectedPos, rayParam);
+
+            if (distToSelected > deselectionThreshold) {
+                clearSelection();
+                return true; // Selection changed (cleared)
+            }
+        }
+        return false; // No change
+    }
+
+    // Select the closest vertex
+    setSelectedVertex(closestVertexIndex);
+    return true; // Selection changed
 }

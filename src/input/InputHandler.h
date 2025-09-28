@@ -26,6 +26,10 @@ private:
     Camera* camera;
     InputMode currentMode;
 
+    // Model selection support
+    class Model* model;
+    float baseSelectionThreshold;
+
     // Resize callback support for GLFWTestApp
     static void* externalUserPointer;
     static void (*externalResizeCallback)(void* userPtr, int width, int height);
@@ -44,8 +48,12 @@ private:
     bool keysPressed[512];  // GLFW key codes
 
 public:
-    InputHandler(GLFWwindow* window, Camera* camera);
+    InputHandler(GLFWwindow* window, Camera* camera, class Model* model = nullptr);
     ~InputHandler() = default;
+
+    // Model selection
+    void setModel(class Model* newModel) { model = newModel; }
+    void setSelectionThreshold(float threshold) { baseSelectionThreshold = threshold; }
 
     // Set external resize callback and user pointer
     static void setExternalResizeCallback(void (*callback)(void* userPtr, int width, int height), void* userPtr);

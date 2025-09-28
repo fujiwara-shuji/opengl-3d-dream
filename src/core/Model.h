@@ -4,6 +4,10 @@
 #include <vector>
 #include <string>
 
+// Forward declarations
+struct Ray;
+class Camera;
+
 // Data structures for 3D model representation
 struct Vertex {
     Vector3 position;
@@ -36,6 +40,9 @@ private:
 
     std::string filename;
     bool isModified;
+
+    // Selection state
+    int selectedVertexIndex;
 
 public:
     Model();
@@ -83,6 +90,16 @@ public:
     const std::string& getFilename() const { return filename; }
     bool getIsModified() const { return isModified; }
     void setModified(bool modified) { isModified = modified; }
+
+    // Selection system
+    int getSelectedVertexIndex() const { return selectedVertexIndex; }
+    void setSelectedVertex(int index);
+    void clearSelection();
+    bool hasSelection() const { return selectedVertexIndex >= 0; }
+
+    // Selection with raycast
+    bool selectVertex(const Ray& ray, const Camera& camera, float baseThreshold);
+    Vector3 getSelectedVertexPosition() const;
 
     // Basic shape generation
     void createCube(float size = 1.0f);
