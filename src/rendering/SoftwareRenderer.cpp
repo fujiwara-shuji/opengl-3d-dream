@@ -245,7 +245,9 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray, int depth) const
     }
 
     // Test ray against coordinate axes (should be visible over triangles when very close) - only if axes are enabled
-    if (config.showCoordinateAxes)
+    // IMPORTANT: Coordinate axes are only tested for primary rays (depth == 0), not for reflection rays
+    // This prevents axes from appearing in reflections on surfaces
+    if (config.showCoordinateAxes && depth == 0)
     {
         for (size_t i = 0; i < lines.size(); ++i)
         {
