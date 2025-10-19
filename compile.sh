@@ -66,13 +66,13 @@ echo "  test-phase0  - Basic project structure test"
 echo "  math-test    - Math library test (Vector3, Matrix4)"
 echo "  test-phase1  - Rendering foundation test"
 echo "  render-test  - Complex rendering test"
-echo "  test-phase5  - Current main application (Phase 5 + UI)"
+echo "  model-editor - Main 3D model editor application"
 echo
 
 # Check command line argument
 if [ $# -eq 0 ]; then
-    echo -e "${YELLOW}No target specified. Compiling main application (test-phase5)...${NC}"
-    TARGET="test-phase5"
+    echo -e "${YELLOW}No target specified. Compiling main application (model-editor)...${NC}"
+    TARGET="model-editor"
 else
     TARGET=$1
 fi
@@ -111,9 +111,9 @@ case $TARGET in
             exit 1
         fi
         ;;
-    "test-phase5"|"main")
+    "model-editor"|"main"|"test-phase5")
         if [ -f "src/test/Phase5Test.cpp" ]; then
-            compile_target "test-phase5" "src/test/Phase5Test.cpp"
+            compile_target "model-editor" "src/test/Phase5Test.cpp"
         else
             echo -e "${RED}✗ Phase5Test.cpp not found${NC}"
             exit 1
@@ -132,7 +132,7 @@ case $TARGET in
                     "Phase0Test") target_name="test-phase0" ;;
                     "MathTest") target_name="math-test" ;;
                     "Phase1Test") target_name="test-phase1" ;;
-                    "Phase5Test") target_name="test-phase5" ;;
+                    "Phase5Test") target_name="model-editor" ;;
                     "ComplexRenderTest") target_name="render-test" ;;
                 esac
 
@@ -162,15 +162,15 @@ case $TARGET in
         echo "  math-test    - Math library test"
         echo "  test-phase1  - Rendering foundation test"
         echo "  render-test  - Complex rendering test"
-        echo "  test-phase5  - Main application (default)"
-        echo "  main         - Alias for test-phase5"
+        echo "  model-editor - Main 3D model editor application (default)"
+        echo "  main         - Alias for model-editor"
         echo "  all          - Compile all available targets"
         echo "  clean        - Clean build directory"
         echo "  help         - Show this help message"
         echo
         echo "Examples:"
         echo "  $0                    # Compile main application"
-        echo "  $0 test-phase5        # Compile Phase 5 test"
+        echo "  $0 model-editor       # Compile 3D model editor"
         echo "  $0 all                # Compile all targets"
         echo "  $0 clean              # Clean build directory"
         ;;

@@ -21,7 +21,7 @@ UI::UI()
     , showAxesSettings(true)
     , showReflectionSettings(true)
     , displayVertices(true)
-    , displayEdges(true)
+    , displayEdges(false)
     , displayFaces(true)
     , displayAxes(true)
     , windowWidth(1000)
@@ -414,6 +414,52 @@ void UI::renderReflectionSettingsPanel() {
             if (ImGui::ColorEdit3("Back Face Color", backColor)) {
                 reflectionConfig.backFaceColor = Vector3(backColor[0], backColor[1], backColor[2]);
                 settingsChanged = true;
+            }
+
+            ImGui::Separator();
+
+            // Sun and Sky settings
+            if (ImGui::CollapsingHeader("Sun & Sky Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (ImGui::Checkbox("Enable Sun", &reflectionConfig.enableSun)) {
+                    settingsChanged = true;
+                }
+
+                if (reflectionConfig.enableSun) {
+                    if (ImGui::SliderFloat("Sun Angular Size", &reflectionConfig.sunAngularSize, 0.01f, 0.2f, "%.3f")) {
+                        settingsChanged = true;
+                    }
+
+                    float sunColor[3] = {
+                        reflectionConfig.sunColor.x,
+                        reflectionConfig.sunColor.y,
+                        reflectionConfig.sunColor.z
+                    };
+                    if (ImGui::ColorEdit3("Sun Color", sunColor)) {
+                        reflectionConfig.sunColor = Vector3(sunColor[0], sunColor[1], sunColor[2]);
+                        settingsChanged = true;
+                    }
+                }
+
+                // Sky colors
+                float horizonColor[3] = {
+                    reflectionConfig.skyHorizonColor.x,
+                    reflectionConfig.skyHorizonColor.y,
+                    reflectionConfig.skyHorizonColor.z
+                };
+                if (ImGui::ColorEdit3("Sky Horizon Color", horizonColor)) {
+                    reflectionConfig.skyHorizonColor = Vector3(horizonColor[0], horizonColor[1], horizonColor[2]);
+                    settingsChanged = true;
+                }
+
+                float zenithColor[3] = {
+                    reflectionConfig.skyZenithColor.x,
+                    reflectionConfig.skyZenithColor.y,
+                    reflectionConfig.skyZenithColor.z
+                };
+                if (ImGui::ColorEdit3("Sky Zenith Color", zenithColor)) {
+                    reflectionConfig.skyZenithColor = Vector3(zenithColor[0], zenithColor[1], zenithColor[2]);
+                    settingsChanged = true;
+                }
             }
 
             ImGui::Separator();

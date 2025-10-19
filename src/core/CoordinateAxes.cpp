@@ -3,8 +3,8 @@
 
 CoordinateAxes::CoordinateAxes()
     : showAxes(true)
-    , axisLength(2.0f)
-    , axisThickness(0.5f)
+    , axisLength(4.0f)               // Default axis length: 4.0 units
+    , axisThickness(0.4f)            // Default axis thickness: 0.4
     , xAxisColor(1.0f, 0.0f, 0.0f)  // Red
     , yAxisColor(0.0f, 1.0f, 0.0f)  // Green
     , zAxisColor(0.0f, 0.0f, 1.0f)  // Blue

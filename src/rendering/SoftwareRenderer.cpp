@@ -336,19 +336,49 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray, int depth) const
 
 Vector3 SoftwareRenderer::calculateSkyboxColor(const Ray &ray) const
 {
-    // Sky gradient based on ray direction (from CLAUDE.md)
-    Vector3 skyLightDirection = Vector3(1, -1, 1).normalized(); // Light source direction
-    Vector3 skyDarkColor = Vector3(0.1f, 0.1f, 0.2f);           // Dark blue
-    Vector3 skyBrightColor = Vector3(0.8f, 0.9f, 1.0f);         // Light blue
+    // lightDirection is the direction light travels (FROM sun TO object)
+    // So the sun is in the OPPOSITE direction: -lightDirection
+    // When checking if ray points at sun, we check if ray.direction aligns with -lightDirection
 
-    // Calculate alignment with light direction
-    float alignment = Vector3::dot(ray.direction, skyLightDirection);
+    // Step 1: Check if ray is pointing at the sun
+    if (reflectionConfig.enableSun) {
+        // Ray pointing at sun means ray.direction is opposite to lightDirection
+        float sunAlignment = Vector3::dot(ray.direction, -reflectionConfig.lightDirection);
 
-    // Map from [-1, 1] to [0, 1]
-    float t = (alignment + 1.0f) * 0.5f;
+        // Angular distance from sun center
+        // sunAlignment close to 1.0 means ray is pointing directly at sun
+        float angularDistance = std::acos(Utils::clamp(sunAlignment, -1.0f, 1.0f));
 
-    // Linear interpolation between dark and bright colors
-    return Vector3::lerp(skyDarkColor, skyBrightColor, t);
+        // Check if within sun disc
+        if (angularDistance < reflectionConfig.sunAngularSize) {
+            // Inside sun disc - return sun color with smooth falloff
+            float sunIntensity = 1.0f - (angularDistance / reflectionConfig.sunAngularSize);
+            sunIntensity = sunIntensity * sunIntensity; // Square for smoother falloff
+
+            // Blend between sun color and sky color at edge
+            Vector3 edgeSkyColor = reflectionConfig.skyHorizonColor;
+            return Vector3::lerp(edgeSkyColor, reflectionConfig.sunColor, sunIntensity);
+        }
+    }
+
+    // Step 2: Calculate sky gradient (blue sky)
+    // The sky should be brighter near the sun and darker away from it
+
+    // Calculate how aligned the ray is with the sun direction
+    float sunProximity = Vector3::dot(ray.direction, -reflectionConfig.lightDirection);
+    sunProximity = (sunProximity + 1.0f) * 0.5f; // Map from [-1,1] to [0,1]
+
+    // Use vertical component for additional gradient (sky gets darker towards horizon)
+    float verticalComponent = ray.direction.z; // Z is up in our coordinate system
+    float verticalFactor = (verticalComponent + 1.0f) * 0.5f; // Map from [-1,1] to [0,1]
+    verticalFactor = std::pow(verticalFactor, 0.7f); // Smooth curve
+
+    // Combine both factors: sky is brighter near sun AND higher in the sky
+    float t = sunProximity * 0.7f + verticalFactor * 0.3f; // Weighted combination
+
+    // Interpolate: t=0 (away from sun) = dark, t=1 (near sun) = bright
+    // So we swap the order: dark color first, bright color second
+    return Vector3::lerp(reflectionConfig.skyZenithColor, reflectionConfig.skyHorizonColor, t);
 }
 
 void SoftwareRenderer::saveAsText(const std::string &filename) const
