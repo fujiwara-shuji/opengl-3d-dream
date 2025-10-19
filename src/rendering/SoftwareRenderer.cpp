@@ -197,11 +197,17 @@ Ray SoftwareRenderer::generateCameraRay(int x, int y) const
     return Ray(cameraPos, rayDir.normalized());
 }
 
-Vector3 SoftwareRenderer::castRay(const Ray &ray) const
+Vector3 SoftwareRenderer::castRay(const Ray &ray, int depth) const
 {
+    // Check maximum reflection depth
+    if (depth >= reflectionConfig.maxReflectionDepth) {
+        return calculateSkyboxColor(ray);
+    }
+
     float closestDistance = std::numeric_limits<float>::max();
     bool hitFound = false;
     Vector3 hitColor;
+    TriangleHit closestTriangleHit; // Store the closest triangle hit for reflection
 
     // Test ray against vertices first (highest priority) - only if vertices are enabled
     if (config.showVertices)
@@ -257,9 +263,9 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray) const
     }
 
     // Test ray against all triangles - only if faces are enabled
+    bool triangleHitFound = false;
     if (config.showFaces)
     {
-        TriangleHit closestTriangleHit;
         for (const Triangle &triangle : triangles)
         {
             TriangleHit hit = RayIntersection::intersectTriangle(ray, triangle.v0, triangle.v1, triangle.v2);
@@ -269,10 +275,52 @@ Vector3 SoftwareRenderer::castRay(const Ray &ray) const
                 closestTriangleHit = hit;
                 closestDistance = hit.distance;
                 hitFound = true;
+                triangleHitFound = true;
 
-                // Find triangle color
-                float shading = hit.isFrontFace ? 1.0f : 0.7f;
-                hitColor = triangle.color * shading;
+                // Calculate color based on reflection settings
+                Vector3 baseColor = hit.isFrontFace ?
+                    reflectionConfig.frontFaceColor :
+                    reflectionConfig.backFaceColor;
+
+                // Start with base color
+                Vector3 finalColor = baseColor;
+
+                // Apply Lambert diffuse reflection if enabled
+                if (reflectionConfig.enableLambertDiffuse)
+                {
+                    // Lambert's cosine law: intensity is proportional to cos(angle)
+                    float NdotL = std::max(0.0f, Vector3::dot(hit.normal, -reflectionConfig.lightDirection));
+
+                    // Ambient + Diffuse
+                    Vector3 ambient = baseColor * reflectionConfig.ambientStrength;
+                    Vector3 diffuse = baseColor * NdotL * reflectionConfig.diffuseStrength;
+
+                    finalColor = ambient + diffuse;
+                }
+
+                // Apply specular reflection if enabled (combined with Lambert)
+                if (reflectionConfig.enableReflection)
+                {
+                    // Calculate reflection vector
+                    Vector3 reflectedDir = Vector3::reflect(ray.direction, hit.normal);
+
+                    // Create reflected ray with slight offset to avoid self-intersection
+                    Vector3 offsetPoint = hit.point + hit.normal * reflectionConfig.reflectionEpsilon;
+                    Ray reflectedRay(offsetPoint, reflectedDir);
+
+                    // Recursively trace reflected ray
+                    Vector3 reflectedColor = castRay(reflectedRay, depth + 1);
+
+                    // Determine surface reflection strength based on face orientation
+                    float reflectionAlpha = hit.isFrontFace ?
+                        reflectionConfig.frontFaceReflectionAlpha :
+                        reflectionConfig.backFaceReflectionAlpha;
+
+                    // Blend Lambert-shaded color with specular reflection
+                    finalColor = finalColor * (1.0f - reflectionAlpha) + reflectedColor * reflectionAlpha;
+                }
+
+                hitColor = finalColor;
             }
         }
     }

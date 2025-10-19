@@ -122,16 +122,78 @@ struct Ray {
 
 ### 反射計算
 
-- **反射式**: R = I - 2 _ (I・N) _ N
+#### ランバート拡散反射（Lambert Diffuse Reflection）
+
+物体表面の基本的な明暗を表現する拡散反射モデル。
+
+- **基本原理**: ランバートの余弦則
+  - 表面が受ける光の強度は、法線と光源方向の角度のコサインに比例
+  - `NdotL = max(0, dot(normal, -lightDirection))`
+
+- **色計算**:
+  ```cpp
+  Vector3 ambient = baseColor * ambientStrength;     // 環境光成分
+  Vector3 diffuse = baseColor * NdotL * diffuseStrength;  // 拡散反射成分
+  finalColor = ambient + diffuse;
+  ```
+
+- **パラメータ**:
+  - `enableLambertDiffuse`: ランバート反射の有効/無効
+  - `lightDirection`: 光源方向ベクトル（デフォルト: (1, -1, 1)正規化）
+  - `ambientStrength`: 環境光の強さ（0.0 - 1.0、デフォルト: 0.2）
+  - `diffuseStrength`: 拡散反射の強さ（0.0 - 1.0、デフォルト: 0.8）
+
+- **特徴**:
+  - 自然な立体感と陰影を表現
+  - 光源方向を向いた面は明るく、背を向けた面は暗くなる
+  - 視点の位置に依存しない（常に同じ明るさ）
+
+#### 鏡面反射（Specular Reflection）
+
+鏡のような光沢のある表面を表現する反射モデル。
+
+- **反射式**: R = I - 2 * (I・N) * N
 - **反射率**: 表面・裏面で個別設定可能
-- **深度制限**: 最大反射回数で無限ループ防止
+  - `frontFaceReflectionAlpha`: 表面の反射強度（0.0 - 1.0）
+  - `backFaceReflectionAlpha`: 裏面の反射強度（0.0 - 1.0）
+- **深度制限**: 最大反射回数で無限ループ防止（デフォルト: 5回）
 - **offsetPoint**: 数値誤差対策で交点を法線方向に微小移動
 
-### 環境光
+#### 反射モデルの組み合わせ
+
+ランバート反射と鏡面反射を組み合わせることで、リアルな表面を表現：
+
+1. **ランバート反射のみ**:
+   - 自然な陰影のみ
+   - マットな表面の表現
+
+2. **鏡面反射のみ**:
+   - 鏡のような完全反射
+   - 金属やガラスの表現
+
+3. **両方有効**（推奨）:
+   ```cpp
+   // Step 1: ランバート反射で基本的な明暗を計算
+   Vector3 lambertColor = ambient + diffuse;
+
+   // Step 2: 鏡面反射色を再帰的に計算
+   Vector3 specularColor = castRay(reflectedRay, depth + 1);
+
+   // Step 3: 両者をブレンド
+   finalColor = lambertColor * (1 - reflectionAlpha) + specularColor * reflectionAlpha;
+   ```
+   - 光沢のある物体（プラスチック、塗装面など）
+   - よりリアルな見た目
+
+### 環境光（スカイボックス）
+
+反射光線が物体にヒットしなかった場合の背景色。
 
 - **光源方向**: (1, -1, 1)正規化
 - **色計算**: 光線方向と光源方向の内積でグラデーション
 - **色設定**: 暗部色・明部色を線形補間
+  - 暗部色: Vector3(0.1, 0.1, 0.2) - 暗い青
+  - 明部色: Vector3(0.8, 0.9, 1.0) - 明るい青
 
 ## カメラシステム
 
@@ -210,7 +272,20 @@ class Camera {
 - **モデル情報**: 頂点数、面数、辺数、ファイル名、変更状態
 - **選択情報**: 選択頂点のインデックス・座標、操作ヒント
 - **表示設定**: 頂点・辺・面・表裏面の表示 ON/OFF
-- **反射設定**: 反射有効/無効、表面・裏面反射率調整
+- **反射設定**:
+  - **Lambert Diffuse Reflection**（ランバート拡散反射）
+    - Enable Lambert Diffuse: ON/OFF切り替え
+    - Ambient Strength: 環境光の強さ調整
+    - Diffuse Strength: 拡散反射の強さ調整
+    - Light Direction: 光源方向の調整（X, Y, Z）
+  - **Specular Reflection**（鏡面反射）
+    - Enable Specular Reflection: ON/OFF切り替え
+    - Max Reflection Depth: 反射の最大回数
+  - **Surface Colors**（表面色）
+    - Front/Back Face Reflection Alpha: 表面・裏面の反射率
+    - Front/Back Face Color: 表面・裏面の基本色
+  - **Advanced Settings**（高度な設定）
+    - Reflection Epsilon: 自己交差回避のための微小オフセット
 
 ### メニューバー
 
@@ -622,6 +697,39 @@ Vector3 reflect(const Vector3& incident, const Vector3& normal) {
 }
 ```
 
+### ランバート拡散反射計算
+
+```cpp
+Vector3 calculateLambertDiffuse(
+    const Vector3& hitPoint,
+    const Vector3& normal,
+    const Vector3& baseColor,
+    const ReflectionConfig& config
+) {
+    // ランバートの余弦則: 光の強度は法線と光源方向の角度のコサインに比例
+    float NdotL = std::max(0.0f, Vector3::dot(normal, -config.lightDirection));
+
+    // 環境光成分: 常に一定の明るさを保証
+    Vector3 ambient = baseColor * config.ambientStrength;
+
+    // 拡散反射成分: 光源方向に依存
+    Vector3 diffuse = baseColor * NdotL * config.diffuseStrength;
+
+    // 最終色 = 環境光 + 拡散反射
+    return ambient + diffuse;
+}
+```
+
+**パラメータ説明**:
+- `normal`: 表面の法線ベクトル（正規化済み）
+- `lightDirection`: 光源から表面への方向ベクトル（正規化済み）
+- `NdotL`: 法線と光源方向の内積（コサイン値）
+  - 1.0: 光源を正面から受ける → 最も明るい
+  - 0.0: 光源と垂直 → 拡散反射なし（環境光のみ）
+  - 負の値: 光源が裏側 → 0にクランプ
+- `ambientStrength`: 環境光の強さ（通常 0.1 - 0.3）
+- `diffuseStrength`: 拡散反射の強さ（通常 0.7 - 0.9）
+
 ### カメラ座標変換（スクリーン → ワールド光線）
 
 ```cpp
@@ -716,13 +824,12 @@ Vector3 calculateSkyboxColor(const Ray& ray) {
 }
 ```
 
-### メインレイキャスティング処理
+### メインレイキャスティング処理（ランバート反射 + 鏡面反射）
 
 ```cpp
 Vector3 castRay(const Ray& ray, const Model& model, int depth = 0) {
-    const int MAX_REFLECTION_DEPTH = 5;
-
-    if (depth >= MAX_REFLECTION_DEPTH) {
+    // 最大反射深度チェック
+    if (depth >= reflectionConfig.maxReflectionDepth) {
         return calculateSkyboxColor(ray);
     }
 
@@ -739,24 +846,49 @@ Vector3 castRay(const Ray& ray, const Model& model, int depth = 0) {
         case RaycastResult::FACE: {
             TriangleHit hit = result.triangleHit;
 
-            if (useReflection) {
+            // 基本色を決定
+            Vector3 baseColor = hit.isFrontFace ?
+                reflectionConfig.frontFaceColor :
+                reflectionConfig.backFaceColor;
+
+            Vector3 finalColor = baseColor;
+
+            // Step 1: ランバート拡散反射を適用
+            if (reflectionConfig.enableLambertDiffuse) {
+                // ランバートの余弦則
+                float NdotL = std::max(0.0f,
+                    Vector3::dot(hit.normal, -reflectionConfig.lightDirection));
+
+                // 環境光 + 拡散反射
+                Vector3 ambient = baseColor * reflectionConfig.ambientStrength;
+                Vector3 diffuse = baseColor * NdotL * reflectionConfig.diffuseStrength;
+
+                finalColor = ambient + diffuse;
+            }
+
+            // Step 2: 鏡面反射を適用（ランバート反射の上にブレンド）
+            if (reflectionConfig.enableReflection) {
                 // 反射ベクトル計算
-                Vector3 reflectedDir = reflect(ray.direction, hit.normal);
+                Vector3 reflectedDir = Vector3::reflect(ray.direction, hit.normal);
 
                 // 反射光線を少し面から離して生成（数値誤差対策）
-                Vector3 offsetPoint = hit.point + hit.normal * 0.001f;
+                Vector3 offsetPoint = hit.point + hit.normal * reflectionConfig.reflectionEpsilon;
                 Ray reflectedRay(offsetPoint, reflectedDir);
 
                 // 再帰的に反射色を計算
                 Vector3 reflectedColor = castRay(reflectedRay, model, depth + 1);
 
-                float alpha = hit.isFrontFace ? frontFaceReflectionAlpha : backFaceReflectionAlpha;
-                Vector3 baseColor = hit.isFrontFace ? frontFaceColor : backFaceColor;
+                // 表面・裏面で反射率を変更
+                float reflectionAlpha = hit.isFrontFace ?
+                    reflectionConfig.frontFaceReflectionAlpha :
+                    reflectionConfig.backFaceReflectionAlpha;
 
-                return baseColor * (1.0f - alpha) + reflectedColor * alpha;
-            } else {
-                return hit.isFrontFace ? frontFaceColor : backFaceColor;
+                // ランバート色と鏡面反射色をブレンド
+                finalColor = finalColor * (1.0f - reflectionAlpha) +
+                            reflectedColor * reflectionAlpha;
             }
+
+            return finalColor;
         }
 
         case RaycastResult::NONE:
@@ -765,6 +897,17 @@ Vector3 castRay(const Ray& ray, const Model& model, int depth = 0) {
     }
 }
 ```
+
+**処理フロー**:
+1. **深度チェック**: 無限ループ防止
+2. **交差判定**: 最も近いオブジェクトを特定
+3. **ランバート反射**: 基本的な明暗を計算
+   - 環境光: 最低限の明るさを保証
+   - 拡散反射: 光源方向に応じた明暗
+4. **鏡面反射**: 光沢を追加
+   - 反射光線を再帰的に追跡
+   - ランバート色とブレンド
+5. **最終色**: ランバート反射 + 鏡面反射の合成
 
 ## 技術的注意点
 

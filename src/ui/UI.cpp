@@ -19,6 +19,7 @@ UI::UI()
     , showSelectionInfo(true)
     , showDisplaySettings(true)
     , showAxesSettings(true)
+    , showReflectionSettings(true)
     , displayVertices(true)
     , displayEdges(true)
     , displayFaces(true)
@@ -211,6 +212,10 @@ void UI::renderToolPanel() {
         if (showAxesSettings) {
             renderAxesSettingsPanel();
         }
+
+        if (showReflectionSettings) {
+            renderReflectionSettingsPanel();
+        }
     }
     ImGui::End();
     #endif
@@ -321,5 +326,119 @@ void UI::applyAxesSettings() {
     // Apply axes settings changes
     if (coordinateAxes && renderer) {
         renderer->setLines(coordinateAxes->getAxisLines());
+    }
+}
+
+void UI::renderReflectionSettingsPanel() {
+    #ifdef IMGUI_AVAILABLE
+    if (imguiAvailable && ImGui::CollapsingHeader("Reflection Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (renderer) {
+            ReflectionConfig& reflectionConfig = renderer->getReflectionConfig();
+            bool settingsChanged = false;
+
+            // Lambert Diffuse Reflection Settings
+            if (ImGui::CollapsingHeader("Lambert Diffuse Reflection", ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (ImGui::Checkbox("Enable Lambert Diffuse", &reflectionConfig.enableLambertDiffuse)) {
+                    settingsChanged = true;
+                }
+
+                if (reflectionConfig.enableLambertDiffuse) {
+                    if (ImGui::SliderFloat("Ambient Strength", &reflectionConfig.ambientStrength, 0.0f, 1.0f)) {
+                        settingsChanged = true;
+                    }
+
+                    if (ImGui::SliderFloat("Diffuse Strength", &reflectionConfig.diffuseStrength, 0.0f, 1.0f)) {
+                        settingsChanged = true;
+                    }
+
+                    // Light direction control
+                    float lightDir[3] = {
+                        reflectionConfig.lightDirection.x,
+                        reflectionConfig.lightDirection.y,
+                        reflectionConfig.lightDirection.z
+                    };
+                    if (ImGui::SliderFloat3("Light Direction", lightDir, -1.0f, 1.0f)) {
+                        reflectionConfig.lightDirection = Vector3(lightDir[0], lightDir[1], lightDir[2]).normalized();
+                        settingsChanged = true;
+                    }
+                }
+            }
+
+            ImGui::Separator();
+
+            // Specular Reflection Settings
+            if (ImGui::CollapsingHeader("Specular Reflection", ImGuiTreeNodeFlags_None)) {
+                if (ImGui::Checkbox("Enable Specular Reflection", &reflectionConfig.enableReflection)) {
+                    settingsChanged = true;
+                }
+
+                if (reflectionConfig.enableReflection) {
+                    // Max reflection depth
+                    if (ImGui::SliderInt("Max Reflection Depth", &reflectionConfig.maxReflectionDepth, 1, 10)) {
+                        settingsChanged = true;
+                    }
+                }
+            }
+
+            ImGui::Separator();
+
+            // Front face settings
+            ImGui::Text("Front Face Settings:");
+            if (ImGui::SliderFloat("Front Face Reflection Alpha", &reflectionConfig.frontFaceReflectionAlpha, 0.0f, 1.0f)) {
+                settingsChanged = true;
+            }
+
+            float frontColor[3] = {
+                reflectionConfig.frontFaceColor.x,
+                reflectionConfig.frontFaceColor.y,
+                reflectionConfig.frontFaceColor.z
+            };
+            if (ImGui::ColorEdit3("Front Face Color", frontColor)) {
+                reflectionConfig.frontFaceColor = Vector3(frontColor[0], frontColor[1], frontColor[2]);
+                settingsChanged = true;
+            }
+
+            ImGui::Separator();
+
+            // Back face settings
+            ImGui::Text("Back Face Settings:");
+            if (ImGui::SliderFloat("Back Face Reflection Alpha", &reflectionConfig.backFaceReflectionAlpha, 0.0f, 1.0f)) {
+                settingsChanged = true;
+            }
+
+            float backColor[3] = {
+                reflectionConfig.backFaceColor.x,
+                reflectionConfig.backFaceColor.y,
+                reflectionConfig.backFaceColor.z
+            };
+            if (ImGui::ColorEdit3("Back Face Color", backColor)) {
+                reflectionConfig.backFaceColor = Vector3(backColor[0], backColor[1], backColor[2]);
+                settingsChanged = true;
+            }
+
+            ImGui::Separator();
+
+            // Advanced settings
+            if (ImGui::TreeNode("Advanced Settings")) {
+                if (ImGui::SliderFloat("Reflection Epsilon", &reflectionConfig.reflectionEpsilon, 0.0001f, 0.01f, "%.4f")) {
+                    settingsChanged = true;
+                }
+                ImGui::TreePop();
+            }
+
+            if (settingsChanged) {
+                applyReflectionSettings();
+            }
+        } else {
+            ImGui::Text("No renderer available");
+        }
+    }
+    #endif
+}
+
+void UI::applyReflectionSettings() {
+    if (renderer) {
+        Utils::logInfo("Reflection settings applied");
+        // Settings are directly modified through reference, so no additional action needed
     }
 }

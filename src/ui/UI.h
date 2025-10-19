@@ -23,6 +23,7 @@ private:
     bool showSelectionInfo;
     bool showDisplaySettings;
     bool showAxesSettings;
+    bool showReflectionSettings;
 
     // Display settings
     bool displayVertices;
@@ -70,10 +71,12 @@ private:
     void renderSelectionInfoPanel();
     void renderDisplaySettingsPanel();
     void renderAxesSettingsPanel();
+    void renderReflectionSettingsPanel();
 
     // Helper methods
     void applyDisplaySettings();
     void applyAxesSettings();
+    void applyReflectionSettings();
 
     // ImGui availability flag
     bool imguiAvailable;

@@ -40,6 +40,31 @@ struct RenderConfig {
     RenderConfig() = default;
 };
 
+// Reflection settings structure
+struct ReflectionConfig {
+    // Reflection control
+    bool enableReflection = false;           // Enable/disable specular reflection system
+    int maxReflectionDepth = 5;              // Maximum recursion depth for reflections
+    float reflectionEpsilon = 0.001f;        // Offset distance to avoid self-intersection
+
+    // Lambert diffuse reflection control
+    bool enableLambertDiffuse = true;        // Enable/disable Lambert diffuse reflection
+    Vector3 lightDirection = Vector3(1, -1, 1).normalized();  // Light source direction
+    float ambientStrength = 0.2f;            // Ambient light strength (0.0 - 1.0)
+    float diffuseStrength = 0.8f;            // Diffuse light strength (0.0 - 1.0)
+
+    // Surface reflection properties
+    float frontFaceReflectionAlpha = 0.3f;   // Front face reflection strength (0.0 = no reflection, 1.0 = full reflection)
+    float backFaceReflectionAlpha = 0.1f;    // Back face reflection strength
+
+    // Surface colors (when not reflecting)
+    Vector3 frontFaceColor = Vector3(0.6f, 0.6f, 0.6f);  // Front face base color
+    Vector3 backFaceColor = Vector3(0.4f, 0.4f, 0.4f);   // Back face base color
+
+    // Default constructor
+    ReflectionConfig() = default;
+};
+
 class SoftwareRenderer : public IRenderer {
 private:
     int width = 640;
@@ -59,6 +84,7 @@ private:
 
     // Render configuration
     RenderConfig config;
+    ReflectionConfig reflectionConfig;
 
 public:
     SoftwareRenderer() = default;
@@ -98,6 +124,9 @@ public:
     RenderConfig& getRenderConfig() { return config; }
     const RenderConfig& getRenderConfig() const { return config; }
 
+    ReflectionConfig& getReflectionConfig() { return reflectionConfig; }
+    const ReflectionConfig& getReflectionConfig() const { return reflectionConfig; }
+
     // Visual display settings
     void setVertexDisplayRadius(float radius) { config.vertexDisplayRadius = radius; }
     void setEdgeDisplayThickness(float thickness) { config.edgeDisplayThickness = thickness; }
@@ -129,6 +158,6 @@ public:
 private:
     // Internal rendering methods
     Ray generateCameraRay(int x, int y) const;
-    Vector3 castRay(const Ray& ray) const;
+    Vector3 castRay(const Ray& ray, int depth = 0) const;
     Vector3 calculateSkyboxColor(const Ray& ray) const;
 };
