@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 3D Model Editor Compilation Script
-# Compiles all phases of the 3D model editor project
+# Compiles the 3D model editor application
 
 set -e  # Exit on any error
 
@@ -62,11 +62,8 @@ compile_target() {
 
 # Compilation targets
 echo -e "${BLUE}Available compilation targets:${NC}"
-echo "  test-phase0  - Basic project structure test"
-echo "  math-test    - Math library test (Vector3, Matrix4)"
-echo "  test-phase1  - Rendering foundation test"
-echo "  render-test  - Complex rendering test"
-echo "  model-editor - Main 3D model editor application"
+echo "  model-editor - Main 3D model editor application (default)"
+echo "  clean        - Clean build directory"
 echo
 
 # Check command line argument
@@ -79,74 +76,12 @@ fi
 
 # Compile based on target
 case $TARGET in
-    "test-phase0")
-        if [ -f "src/test/Phase0Test.cpp" ]; then
-            compile_target "test-phase0" "src/test/Phase0Test.cpp"
-        else
-            echo -e "${RED}✗ Phase0Test.cpp not found${NC}"
-            exit 1
-        fi
-        ;;
-    "math-test")
-        if [ -f "src/test/MathTest.cpp" ]; then
-            compile_target "math-test" "src/test/MathTest.cpp"
-        else
-            echo -e "${RED}✗ MathTest.cpp not found${NC}"
-            exit 1
-        fi
-        ;;
-    "test-phase1")
-        if [ -f "src/test/Phase1Test.cpp" ]; then
-            compile_target "test-phase1" "src/test/Phase1Test.cpp"
-        else
-            echo -e "${RED}✗ Phase1Test.cpp not found${NC}"
-            exit 1
-        fi
-        ;;
-    "render-test")
-        if [ -f "src/rendering/ComplexRenderTest.cpp" ]; then
-            compile_target "render-test" "src/rendering/ComplexRenderTest.cpp"
-        else
-            echo -e "${RED}✗ ComplexRenderTest.cpp not found${NC}"
-            exit 1
-        fi
-        ;;
-    "model-editor"|"main"|"test-phase5")
+    "model-editor"|"main")
         if [ -f "src/Main.cpp" ]; then
             compile_target "model-editor" "src/Main.cpp"
         else
             echo -e "${RED}✗ Main.cpp not found${NC}"
             exit 1
-        fi
-        ;;
-    "all")
-        echo -e "${YELLOW}Compiling all available targets...${NC}"
-        SUCCESS_COUNT=0
-        TOTAL_COUNT=0
-
-        for test_file in src/test/Phase0Test.cpp src/test/MathTest.cpp src/test/Phase1Test.cpp src/Main.cpp src/rendering/ComplexRenderTest.cpp; do
-            if [ -f "$test_file" ]; then
-                TOTAL_COUNT=$((TOTAL_COUNT + 1))
-                basename_file=$(basename "$test_file" .cpp)
-                case $basename_file in
-                    "Phase0Test") target_name="test-phase0" ;;
-                    "MathTest") target_name="math-test" ;;
-                    "Phase1Test") target_name="test-phase1" ;;
-                    "Main") target_name="model-editor" ;;
-                    "ComplexRenderTest") target_name="render-test" ;;
-                esac
-
-                if compile_target "$target_name" "$test_file"; then
-                    SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-                fi
-            fi
-        done
-
-        echo -e "${BLUE}Compilation summary: $SUCCESS_COUNT/$TOTAL_COUNT targets successful${NC}"
-        if [ $SUCCESS_COUNT -eq $TOTAL_COUNT ]; then
-            echo -e "${GREEN}✓ All targets compiled successfully!${NC}"
-        else
-            echo -e "${YELLOW}⚠ Some targets failed to compile${NC}"
         fi
         ;;
     "clean")
@@ -158,20 +93,14 @@ case $TARGET in
         echo -e "${BLUE}Usage: $0 [target]${NC}"
         echo
         echo "Available targets:"
-        echo "  test-phase0  - Basic project structure test"
-        echo "  math-test    - Math library test"
-        echo "  test-phase1  - Rendering foundation test"
-        echo "  render-test  - Complex rendering test"
         echo "  model-editor - Main 3D model editor application (default)"
         echo "  main         - Alias for model-editor"
-        echo "  all          - Compile all available targets"
         echo "  clean        - Clean build directory"
         echo "  help         - Show this help message"
         echo
         echo "Examples:"
         echo "  $0                    # Compile main application"
         echo "  $0 model-editor       # Compile 3D model editor"
-        echo "  $0 all                # Compile all targets"
         echo "  $0 clean              # Clean build directory"
         ;;
     *)

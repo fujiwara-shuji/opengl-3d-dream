@@ -65,13 +65,18 @@ sudo pacman -S base-devel glfw-x11 mesa
 git clone https://github.com/<your-username>/opengl-3d-dream.git
 cd opengl-3d-dream
 
+# Dear ImGui をセットアップ（初回のみ）
+mkdir -p external && cd external
+git clone --depth 1 https://github.com/ocornut/imgui.git
+cd ..
+
 # メインアプリケーションをコンパイル
 ./compile.sh
 
-# 特定のターゲットをコンパイル
-./compile.sh model-editor    # メインアプリケーション
-./compile.sh all              # テストを含むすべてのターゲット
+# その他のコマンド
+./compile.sh model-editor    # メインアプリケーション（明示的）
 ./compile.sh clean            # ビルドディレクトリをクリーン
+./compile.sh help             # ヘルプを表示
 ```
 
 ### 実行
