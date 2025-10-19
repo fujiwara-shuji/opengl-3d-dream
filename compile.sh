@@ -112,10 +112,10 @@ case $TARGET in
         fi
         ;;
     "model-editor"|"main"|"test-phase5")
-        if [ -f "src/test/Phase5Test.cpp" ]; then
-            compile_target "model-editor" "src/test/Phase5Test.cpp"
+        if [ -f "src/Main.cpp" ]; then
+            compile_target "model-editor" "src/Main.cpp"
         else
-            echo -e "${RED}✗ Phase5Test.cpp not found${NC}"
+            echo -e "${RED}✗ Main.cpp not found${NC}"
             exit 1
         fi
         ;;
@@ -124,7 +124,7 @@ case $TARGET in
         SUCCESS_COUNT=0
         TOTAL_COUNT=0
 
-        for test_file in src/test/Phase0Test.cpp src/test/MathTest.cpp src/test/Phase1Test.cpp src/test/Phase5Test.cpp src/rendering/ComplexRenderTest.cpp; do
+        for test_file in src/test/Phase0Test.cpp src/test/MathTest.cpp src/test/Phase1Test.cpp src/Main.cpp src/rendering/ComplexRenderTest.cpp; do
             if [ -f "$test_file" ]; then
                 TOTAL_COUNT=$((TOTAL_COUNT + 1))
                 basename_file=$(basename "$test_file" .cpp)
@@ -132,7 +132,7 @@ case $TARGET in
                     "Phase0Test") target_name="test-phase0" ;;
                     "MathTest") target_name="math-test" ;;
                     "Phase1Test") target_name="test-phase1" ;;
-                    "Phase5Test") target_name="model-editor" ;;
+                    "Main") target_name="model-editor" ;;
                     "ComplexRenderTest") target_name="render-test" ;;
                 esac
 

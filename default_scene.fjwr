@@ -1,0 +1,72 @@
+# Default Scene for 3D Model Editor
+# Contains 3 objects: Ground plane, Normal pyramid, Inverted pyramid
+
+# ===== Object 1: Ground Plane (Large square at z=-0.5) =====
+v -5.0 -5.0 -0.5
+v 5.0 -5.0 -0.5
+v 5.0 5.0 -0.5
+v -5.0 5.0 -0.5
+
+# Ground faces
+f 0 1 2
+f 0 2 3
+
+# Ground edges
+l 0 1
+l 1 2
+l 2 3
+l 3 0
+
+# ===== Object 2: Normal Pyramid (Apex pointing up) =====
+v -1.0 -1.0 0.0
+v 1.0 -1.0 0.0
+v 1.0 1.0 0.0
+v -1.0 1.0 0.0
+v 0.0 0.0 2.0
+
+# Pyramid base faces
+f 4 5 6
+f 4 6 7
+
+# Pyramid side faces
+f 4 8 5
+f 5 8 6
+f 6 8 7
+f 7 8 4
+
+# Pyramid edges
+l 4 5
+l 5 6
+l 6 7
+l 7 4
+l 4 8
+l 5 8
+l 6 8
+l 7 8
+
+# ===== Object 3: Inverted Pyramid (Apex pointing down) for shadow testing =====
+v -0.8 2.0 1.5
+v 0.8 2.0 1.5
+v 0.8 3.6 1.5
+v -0.8 3.6 1.5
+v 0.0 2.8 -0.2
+
+# Inverted pyramid base faces
+f 9 10 11
+f 9 11 12
+
+# Inverted pyramid side faces
+f 9 13 10
+f 10 13 11
+f 11 13 12
+f 12 13 9
+
+# Inverted pyramid edges
+l 9 10
+l 10 11
+l 11 12
+l 12 9
+l 9 13
+l 10 13
+l 11 13
+l 12 13

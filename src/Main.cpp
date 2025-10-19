@@ -1,17 +1,17 @@
 #include <GLFW/glfw3.h>
 #include <GL/gl.h>
-#include "../core/Camera.h"
-#include "../core/Model.h"
-#include "../core/CoordinateAxes.h"
-#include "../input/InputHandler.h"
-#include "../rendering/SoftwareRenderer.h"
-#include "../ui/UI.h"
-#include "../utils/Utils.h"
+#include "core/Camera.h"
+#include "core/Model.h"
+#include "core/CoordinateAxes.h"
+#include "input/InputHandler.h"
+#include "rendering/SoftwareRenderer.h"
+#include "ui/UI.h"
+#include "utils/Utils.h"
 #include <iostream>
 #include <vector>
 #include <chrono>
 
-class Phase5TestApp
+class ModelEditorApp
 {
 private:
     GLFWwindow *window;
@@ -35,9 +35,9 @@ private:
     float fpsTimer = 0.0f;
 
 public:
-    Phase5TestApp() : window(nullptr), inputHandler(nullptr) {}
+    ModelEditorApp() : window(nullptr), inputHandler(nullptr) {}
 
-    ~Phase5TestApp()
+    ~ModelEditorApp()
     {
         cleanup();
     }
@@ -58,7 +58,7 @@ public:
 
         // Create window
         window = glfwCreateWindow(windowWidth, windowHeight,
-                                  "Phase 5 Test - Vertex & Edge Selection", nullptr, nullptr);
+                                  "3D Model Editor", nullptr, nullptr);
         if (!window)
         {
             Utils::logError("Failed to create GLFW window");
@@ -75,8 +75,13 @@ public:
         camera.setDistance(5.0f);
         camera.setIsometricView();
 
-        // Create test model
-        createTestModel();
+        // Load default scene from .fjwr file
+        if (!model.loadFromFile("default_scene.fjwr")) {
+            Utils::logError("Failed to load default_scene.fjwr, creating fallback model");
+            createTestModel();
+        } else {
+            Utils::logInfo("Successfully loaded default_scene.fjwr");
+        }
 
         // Setup input handler with model
         inputHandler = new InputHandler(window, &camera, &model);
@@ -122,7 +127,7 @@ public:
         model.setDisableVisibilityCheck(true);
         Utils::logInfo("Visibility check disabled for easier vertex selection");
 
-        Utils::logInfo("Phase 5 Test Application initialized successfully");
+        Utils::logInfo("3D Model Editor initialized successfully");
         printControls();
 
         return true;
@@ -130,59 +135,91 @@ public:
 
     void createTestModel()
     {
-        Utils::logInfo("Creating test model for Phase 5...");
+        Utils::logInfo("Creating fallback test model...");
 
-        // Create a simple pyramid model for testing
+        // Create a complex scene with 3 objects:
+        // 1. Ground plane at z=-0.5
+        // 2. Normal pyramid (apex pointing up)
+        // 3. Inverted pyramid (apex pointing down) for shadow testing
         model.clear();
 
-        // Base vertices (square base)
-        model.addVertex(-1.0f, -1.0f, 0.0f); // 0: Bottom-left
-        model.addVertex(1.0f, -1.0f, 0.0f);  // 1: Bottom-right
-        model.addVertex(1.0f, 1.0f, 0.0f);   // 2: Top-right
-        model.addVertex(-1.0f, 1.0f, 0.0f);  // 3: Top-left
-        model.addVertex(0.0f, 0.0f, 2.0f);   // 4: Apex
+        // ===== Object 1: Ground Plane (Large square at z=-0.5) =====
+        model.addVertex(-5.0f, -5.0f, -0.5f); // 0: Ground bottom-left
+        model.addVertex(5.0f, -5.0f, -0.5f);  // 1: Ground bottom-right
+        model.addVertex(5.0f, 5.0f, -0.5f);   // 2: Ground top-right
+        model.addVertex(-5.0f, 5.0f, -0.5f);  // 3: Ground top-left
 
-        // Test rectangle at z=-0.5
-        model.addVertex(0.0f, 0.0f, -0.5f);  // 5: Rectangle bottom-left
-        model.addVertex(0.5f, 0.0f, -0.5f);  // 6: Rectangle bottom-right
-        model.addVertex(0.5f, 10.0f, -0.5f); // 7: Rectangle top-right
-        model.addVertex(0.0f, 10.0f, -0.5f); // 8: Rectangle top-left
+        // Ground faces (two triangles)
+        model.addFace(0, 1, 2); // Ground triangle 1
+        model.addFace(0, 2, 3); // Ground triangle 2
 
-        // Base faces (two triangles for the square base)
-        model.addFace(0, 1, 2); // Bottom triangle 1
-        model.addFace(0, 2, 3); // Bottom triangle 2
-
-        // Side faces
-        model.addFace(0, 4, 1); // Side 1
-        model.addFace(1, 4, 2); // Side 2
-        model.addFace(2, 4, 3); // Side 3
-        model.addFace(3, 4, 0); // Side 4
-
-        // Test rectangle faces (two triangles)
-        model.addFace(5, 6, 7); // Rectangle triangle 1
-        model.addFace(5, 7, 8); // Rectangle triangle 2
-
-        // Edges (manual addition for testing)
-        // Base edges
+        // Ground edges
         model.addEdge(0, 1);
         model.addEdge(1, 2);
         model.addEdge(2, 3);
         model.addEdge(3, 0);
-        // Apex edges
-        model.addEdge(0, 4);
-        model.addEdge(1, 4);
-        model.addEdge(2, 4);
-        model.addEdge(3, 4);
-        // Rectangle edges
+
+        // ===== Object 2: Normal Pyramid (Apex pointing up) =====
+        model.addVertex(-1.0f, -1.0f, 0.0f); // 4: Pyramid base bottom-left
+        model.addVertex(1.0f, -1.0f, 0.0f);  // 5: Pyramid base bottom-right
+        model.addVertex(1.0f, 1.0f, 0.0f);   // 6: Pyramid base top-right
+        model.addVertex(-1.0f, 1.0f, 0.0f);  // 7: Pyramid base top-left
+        model.addVertex(0.0f, 0.0f, 2.0f);   // 8: Pyramid apex (up)
+
+        // Pyramid base faces (two triangles)
+        model.addFace(4, 5, 6); // Pyramid base triangle 1
+        model.addFace(4, 6, 7); // Pyramid base triangle 2
+
+        // Pyramid side faces
+        model.addFace(4, 8, 5); // Side 1
+        model.addFace(5, 8, 6); // Side 2
+        model.addFace(6, 8, 7); // Side 3
+        model.addFace(7, 8, 4); // Side 4
+
+        // Pyramid edges
+        model.addEdge(4, 5);
         model.addEdge(5, 6);
         model.addEdge(6, 7);
+        model.addEdge(7, 4);
+        model.addEdge(4, 8);
+        model.addEdge(5, 8);
+        model.addEdge(6, 8);
         model.addEdge(7, 8);
-        model.addEdge(8, 5);
 
-        Utils::logInfo("Test pyramid with rectangle created:");
-        Utils::logInfo("  Vertices: " + std::to_string(model.getVertexCount()));
-        Utils::logInfo("  Faces: " + std::to_string(model.getFaceCount()));
-        Utils::logInfo("  Edges: " + std::to_string(model.getEdgeCount()));
+        // ===== Object 3: Inverted Pyramid (Apex pointing down) for shadow testing =====
+        model.addVertex(-0.8f, 2.0f, 1.5f);  // 9: Inverted pyramid base bottom-left
+        model.addVertex(0.8f, 2.0f, 1.5f);   // 10: Inverted pyramid base bottom-right
+        model.addVertex(0.8f, 3.6f, 1.5f);   // 11: Inverted pyramid base top-right
+        model.addVertex(-0.8f, 3.6f, 1.5f);  // 12: Inverted pyramid base top-left
+        model.addVertex(0.0f, 2.8f, -0.2f);  // 13: Inverted pyramid apex (down)
+
+        // Inverted pyramid base faces (two triangles)
+        model.addFace(9, 10, 11);  // Inverted pyramid base triangle 1
+        model.addFace(9, 11, 12);  // Inverted pyramid base triangle 2
+
+        // Inverted pyramid side faces
+        model.addFace(9, 13, 10);  // Side 1
+        model.addFace(10, 13, 11); // Side 2
+        model.addFace(11, 13, 12); // Side 3
+        model.addFace(12, 13, 9);  // Side 4
+
+        // Inverted pyramid edges
+        model.addEdge(9, 10);
+        model.addEdge(10, 11);
+        model.addEdge(11, 12);
+        model.addEdge(12, 9);
+        model.addEdge(9, 13);
+        model.addEdge(10, 13);
+        model.addEdge(11, 13);
+        model.addEdge(12, 13);
+
+        Utils::logInfo("Test scene created with 3 objects:");
+        Utils::logInfo("  - Ground plane at z=-0.5");
+        Utils::logInfo("  - Normal pyramid (apex up)");
+        Utils::logInfo("  - Inverted pyramid (apex down) for shadow testing");
+        Utils::logInfo("  Total vertices: " + std::to_string(model.getVertexCount()));
+        Utils::logInfo("  Total faces: " + std::to_string(model.getFaceCount()));
+        Utils::logInfo("  Total edges: " + std::to_string(model.getEdgeCount()));
     }
 
     void loadModelIntoRenderer()
@@ -193,31 +230,36 @@ public:
         const auto &vertices = model.getVertices();
         const auto &faces = model.getFaces();
 
-        // Add faces to renderer as triangles
+        // Add faces to renderer as triangles with object-specific colors
         for (const auto &face : faces)
         {
             Vector3 v0 = vertices[face.v1].position;
             Vector3 v1 = vertices[face.v2].position;
             Vector3 v2 = vertices[face.v3].position;
 
-            // Use different colors for different faces
+            // Assign colors based on vertex indices to identify objects
             Vector3 color;
-            if (face.v1 == 0 && face.v2 == 1 && face.v3 == 2)
+
+            // Ground plane (vertices 0-3): Gray
+            if (face.v1 <= 3 && face.v2 <= 3 && face.v3 <= 3)
             {
-                color = Vector3(0.8f, 0.3f, 0.3f); // Red base
+                color = Vector3(0.6f, 0.6f, 0.6f); // Gray ground
             }
-            else if (face.v1 == 0 && face.v2 == 2 && face.v3 == 3)
+            // Normal pyramid (vertices 4-8): Green
+            else if (face.v1 >= 4 && face.v1 <= 8 &&
+                     face.v2 >= 4 && face.v2 <= 8 &&
+                     face.v3 >= 4 && face.v3 <= 8)
             {
-                color = Vector3(0.8f, 0.3f, 0.3f); // Red base
+                color = Vector3(0.4f, 0.7f, 0.4f); // Green pyramid
             }
-            else if ((face.v1 == 5 && face.v2 == 6 && face.v3 == 7) ||
-                     (face.v1 == 5 && face.v2 == 7 && face.v3 == 8))
+            // Inverted pyramid (vertices 9-13): Blue
+            else if (face.v1 >= 9 && face.v2 >= 9 && face.v3 >= 9)
             {
-                color = Vector3(0.3f, 0.4f, 0.8f); // Blue rectangle
+                color = Vector3(0.4f, 0.5f, 0.8f); // Blue inverted pyramid
             }
             else
             {
-                color = Vector3(0.4f, 0.7f, 0.4f); // Green sides
+                color = Vector3(0.7f, 0.7f, 0.7f); // Fallback gray
             }
 
             renderer.addTriangle(Triangle(v0, v1, v2, color));
@@ -430,7 +472,7 @@ public:
         if (fpsTimer >= 1.0f)
         {
             float fps = frameCount / fpsTimer;
-            std::string title = "Phase 5 Test - FPS: " + std::to_string(static_cast<int>(fps));
+            std::string title = "3D Model Editor - FPS: " + std::to_string(static_cast<int>(fps));
             glfwSetWindowTitle(window, title.c_str());
 
             frameCount = 0;
@@ -457,7 +499,7 @@ public:
 
         glfwTerminate();
 
-        Utils::logInfo("Phase 5 Test Application cleaned up");
+        Utils::logInfo("3D Model Editor cleaned up");
     }
 
     void printControls()
@@ -484,7 +526,7 @@ public:
     // Static callback for window resize (called by InputHandler)
     static void onResizeStatic(void *userPtr, int width, int height)
     {
-        Phase5TestApp *app = static_cast<Phase5TestApp *>(userPtr);
+        ModelEditorApp *app = static_cast<ModelEditorApp *>(userPtr);
         if (app)
         {
             app->onResize(width, height);
@@ -517,9 +559,9 @@ public:
 
 int main()
 {
-    Utils::logInfo("Starting Phase 5 Test - Vertex & Edge Selection");
+    Utils::logInfo("Starting 3D Model Editor");
 
-    Phase5TestApp app;
+    ModelEditorApp app;
 
     if (!app.initialize())
     {
@@ -537,6 +579,6 @@ int main()
         return -1;
     }
 
-    Utils::logInfo("Phase 5 Test completed successfully");
+    Utils::logInfo("3D Model Editor completed successfully");
     return 0;
 }
