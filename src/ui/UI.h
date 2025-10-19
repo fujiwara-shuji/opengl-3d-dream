@@ -73,10 +73,13 @@ private:
     void renderAxesSettingsPanel();
     void renderReflectionSettingsPanel();
 
-    // Helper methods
+public:
+    // Apply settings to renderer
     void applyDisplaySettings();
     void applyAxesSettings();
     void applyReflectionSettings();
+
+private:
 
     // ImGui availability flag
     bool imguiAvailable;

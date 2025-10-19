@@ -107,11 +107,10 @@ public:
             return false;
         }
 
-        // Apply initial display settings from UI to renderer
-        renderer.setShowVertices(true);
-        renderer.setShowEdges(true);
-        renderer.setShowFaces(true);
-        renderer.setShowCoordinateAxes(coordinateAxes.isVisible());
+        // Apply initial display settings from UI defaults
+        // (Defaults: Vertices=true, Edges=false, Faces=true, Axes=true)
+        ui.applyDisplaySettings();
+        ui.applyAxesSettings();
 
         // Configure separated display and selection thresholds
         renderer.setVertexDisplayRadius(0.015f);         // Small visual display radius
